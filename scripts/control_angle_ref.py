@@ -7,6 +7,8 @@
 import rospy
 from std_msgs.msg import String
 from std_msgs.msg import Float64
+from geometry_msgs.msg import *
+from robot_kinematic_services.srv import InverseKinematics
 
 #attempt at using class for subscriber
 class Subscriber(object):
@@ -52,6 +54,7 @@ def run(goal_angles):
 def get_input():
     # for now generates an empty pose and returns it
     # maybe should take in a pose and apply a header onto it here
+    # how should it take in inputs?
     pose = PoseStamped()
     return pose
 
@@ -60,6 +63,8 @@ def compute_ik(goal_pose):  # needs 2x strings?
     # for now takes in a PoseStamp and returns array of float64(?)
     # in future will create message that will be sent to diogos I_K service node and return solution
     # assume this node is launched
+    computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
+    goal_angles = computeik("a", "b", goal_pose)  #this service requires two strings
     return goal_angles
 
 
