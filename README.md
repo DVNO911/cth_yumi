@@ -4,21 +4,23 @@ This is a package for controlling ABB's collaborative robot YuMi. It was written
 
 ## Installation and Usage
 
-Please consult the [wiki] on how to install and use this package.
+Please consult the guide on how to install and use this package. (currently found in basic_py_scripts repository)
+
 ##Contributing
+
 This package is currently only meant to be developed by students at Chalmers.
 
 ## Authors and Acknowledgments
 
-David Wannheden
-Charles Strömblad
-Simon Mattson Tenser
-Ahmad Wahba
-William West
-Nick Norizadeh
+David Wannheden\
+Charles Strömblad\
+Simon Mattson Tenser\
+Ahmad Wahba\
+William West\
+Nick Norizadeh\
 
 Special thanks to Yiannis Karayiannidis for guidance in this project.
 
 ## License
 
-Saknas
+Missing

@@ -4,11 +4,15 @@
 # Node takes in a position, calls to calculate i_k, regulates velocities of each encoder by publishing onto the appropriate topics
 # Currently full of pseudocode but is a shell of how the final control node is going to work
 
+# Currently aims to use pythons own simple PIDcontroller, to install run "pip install simple-pid"
+# Import python control library
+
 import rospy
 from std_msgs.msg import String
 from std_msgs.msg import Float64
 from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
+from simple_pid import PID
 
 #attempt at using class for subscriber
 class Subscriber(object):
@@ -23,6 +27,7 @@ class Subscriber(object):
 
 
 def run(goal_angles):
+    pid1 = PID(2, 0.1, 0.05, 0, None, (-1, 1), True, False)  #initialize PIDcontroller
     pub1 = rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64, queue_size=1)  # initiate publishers, incomplete
     pub2 = rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1)
     pub3 = rospy.Publisher('/yumi/joint_vel_controller_3_r/command', Float64, queue_size=1)
@@ -34,19 +39,16 @@ def run(goal_angles):
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         rospy.spin
-        while subscriber.current_angles is None: #for when node has just been started up
+        while subscriber.current_angles is None:  #for when node has just been started up
             rospy.spin
-        current_velocities = get_current_velocities(goal_angles, subscriber.current_angles)
+        velocities = get_velocities(goal_angles, subscriber.current_angles)
 
 
-        pub1.publish(current_velocities(0)) #rough example of how publications are gonnawork
-        pub2.publish(current_velocities(1))
+        pub1.publish(velocities(0)) #rough example of how publications are gonnawork
+        pub2.publish(velocities(1))
         # rospy.loginfo(current_velocities)
 
         rate.sleep()
-
-#def callback(data): #obsolete?
-#   rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
 
 
 
@@ -54,8 +56,16 @@ def get_input():
     # for now generates an empty pose, adds it to an array(because compute_ik requires a PoseStamped[] array) and returns it
     # how should it take in inputs? parameter in launch file?
     p = PoseStamped()
-    p.header.frame_id = ""
+    p.header.frame_id = "yumi_base_link"
     p.header.stamp = rospy.Time.now()
+    p.pose.position.x = 0.388638 # this placeholder pose is necessary because we need to send in a valid pose
+    p.pose.position.y = 0.328583
+    p.pose.position.z = 0.278045
+    p.pose.orientation.x = 0.715402
+    p.pose.orientation.y = -0.201775
+    p.pose.orientation.z = 0.634136
+    p.pose.orientation.w = -0.212975
+
     print(p)
     desired_poses = [p]
     return desired_poses
@@ -65,11 +75,13 @@ def compute_ik(goal_poses):
     # call diogos I_K service node and return solution
     # assume this node is launched
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
-    goal_angles = computeik("a", "b", goal_poses)  #this service requires two strings
+    goal_angles = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
+    print(goal_angles)
     return goal_angles
 
 
-def get_current_velocities(goal_angles, current_angles):  #P-controller, not implemented, returns array of velocities
+def get_velocities(goal_angles, current_angles):  #P-controller, not implemented, returns array of velocities
+
     current_velocities = ()
     return current_velocities
 
