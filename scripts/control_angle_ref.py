@@ -31,7 +31,6 @@ def run(goal_angles):
     pub6 = rospy.Publisher('/yumi/joint_vel_controller_6_r/command', Float64, queue_size=1)
     pub7 = rospy.Publisher('/yumi/joint_vel_controller_7_r/command', Float64, queue_size=1)
     subscriber = Subscriber()
-    rospy.init_node('control_node', anonymous=True)  # initiate node
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         rospy.spin
@@ -52,30 +51,34 @@ def run(goal_angles):
 
 
 def get_input():
-    # for now generates an empty pose and returns it
-    # maybe should take in a pose and apply a header onto it here
-    # how should it take in inputs?
-    pose = PoseStamped()
-    return pose
+    # for now generates an empty pose, adds it to an array(because compute_ik requires a PoseStamped[] array) and returns it
+    # how should it take in inputs? parameter in launch file?
+    p = PoseStamped()
+    p.header.frame_id = ""
+    p.header.stamp = rospy.Time.now()
+    print(p)
+    desired_poses = [p]
+    return desired_poses
 
 
-def compute_ik(goal_pose):  # needs 2x strings?
-    # for now takes in a PoseStamp and returns array of float64(?)
-    # in future will create message that will be sent to diogos I_K service node and return solution
+def compute_ik(goal_poses):
+    # call diogos I_K service node and return solution
     # assume this node is launched
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
-    goal_angles = computeik("a", "b", goal_pose)  #this service requires two strings
+    goal_angles = computeik("a", "b", goal_poses)  #this service requires two strings
     return goal_angles
 
 
-def get_current_velocities(goal_angles, current_angles): #P-controller, not implemented, returns array of velocities
+def get_current_velocities(goal_angles, current_angles):  #P-controller, not implemented, returns array of velocities
     current_velocities = ()
     return current_velocities
 
 if __name__ == '__main__':
     # this should be looped so that code runs from here when new input is detected
-    goal_pose = get_input()  # input is of type PoseStamped
-    goal_angles = compute_ik(goal_pose)
+
+    rospy.init_node('control_node', anonymous=True)  # initiate node
+    goal_poses = get_input()  # input is of type PoseStamped[]
+    goal_angles = compute_ik(goal_poses)
 
     try:
         run(goal_angles)
