@@ -4,7 +4,6 @@
 # Node takes in a position, calls to calculate i_k, regulates velocities of each encoder by publishing onto the appropriate topics
 # Currently full of pseudocode but is a shell of how the final control node is going to work
 
-# Currently aims to use pythons own simple PIDcontroller, to install run "pip install simple-pid"
 # Import python control library
 
 import rospy
@@ -13,7 +12,7 @@ from std_msgs.msg import Float64
 from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
 # from simple_pid import PID
-import control as cl
+# import control as cl
 
 Kp = 2
 Ki = 0.5
@@ -31,28 +30,35 @@ class Subscriber(object):
 
 
 def run(goal_angles):
-    pid1 = PID(2, 0.1, 0.05, 0, None, (-1, 1), True, False)  # initialize PIDcontroller
-    pub1 = rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64,
-                           queue_size=1)  # initiate publishers, incomplete
-    pub2 = rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1)
-    pub3 = rospy.Publisher('/yumi/joint_vel_controller_3_r/command', Float64, queue_size=1)
-    pub4 = rospy.Publisher('/yumi/joint_vel_controller_4_r/command', Float64, queue_size=1)
-    pub5 = rospy.Publisher('/yumi/joint_vel_controller_5_r/command', Float64, queue_size=1)
-    pub6 = rospy.Publisher('/yumi/joint_vel_controller_6_r/command', Float64, queue_size=1)
-    pub7 = rospy.Publisher('/yumi/joint_vel_controller_7_r/command', Float64, queue_size=1)
+    # Set loop frequency
+    rate = rospy.Rate(10)
+
+    # initialize publishers
+    publishers = list()
+    for i in range(6):
+        publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_r/command', Float64, queue_size=1))
+
+    # initialize subscriber
     subscriber = Subscriber()
-    rate = rospy.Rate(10)  # 10hz
+
+    # LOOP
     while not rospy.is_shutdown():
         rospy.spin
-        while subscriber.current_angles is None:  # for when node has just been started up
-            rospy.spin
-        velocities = get_velocities(goal_angles, subscriber.current_angles)
+        if subscriber.current_angles is None:  # for when node has just been started up
+                rate.sleep
+        else:
+            # Compute the new velocities
+            velocities = get_velocities(goal_angles, subscriber.current_angles)
 
-        pub1.publish(velocities(0))  # rough example of how publications are gonnawork
-        pub2.publish(velocities(1))
-        # rospy.loginfo(current_velocities)
+            # Publish the new velocities
+            for i in range(6):
+                publishers[i].publish(velocities(i))
 
-        rate.sleep()
+            # Update the current velocities by listening to sensors
+            subscriber.sub_callback()
+
+            # Repeat
+            rate.sleep()
 
 
 def get_input():
@@ -60,7 +66,7 @@ def get_input():
     # how should it take in inputs? parameter in launch file?
     p = PoseStamped()
     p.header.frame_id = "yumi_base_link"  # important for ik computation
-    p.header.stamp = rospy.Time.now()
+    p.header.stamp = rospy.Time.now() # currently not working?
     p.pose.position.x = 0.388638  # this placeholder pose is necessary because we need to send in a valid pose
     p.pose.position.y = 0.328583
     p.pose.position.z = 0.278045
@@ -76,11 +82,22 @@ def get_input():
 
 def compute_ik(goal_poses):
     # call diogos I_K service node and return solution
-    # assume this node is launched
+    # service node needs to be running
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
-    goal_angles = computeik("gripper_l_base", "",
-                            goal_poses)  # this service requires two strings, dont know what the second is
-    print(goal_angles)
+    solutions = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
+    print("here")
+    print(solutions)
+    print("then here")
+    print(solutions.sols[0].status.code)
+
+    if solutions.sols[0].status.code == 0:
+        goal_angles = solutions.sols[0].ik_solution
+        print("IK COMPUTATION WORKED. ANSWER IS ")
+        print(goal_angles)
+
+    else:
+        print("IK COMPUTATION FAILED")
+
     return goal_angles
 
 
@@ -89,7 +106,11 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
     error = current_angles - goal_angles
 
     current_velocities = Kp * error + I
+    # MISSING: CLAMPING VELOCITIES
+
+    # Update integral part
     I = I + Ki * error
+
     print(current_velocities)
     return current_velocities
 
