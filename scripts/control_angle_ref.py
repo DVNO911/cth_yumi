@@ -12,23 +12,28 @@ from std_msgs.msg import String
 from std_msgs.msg import Float64
 from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
-from simple_pid import PID
+# from simple_pid import PID
+import control as cl
 
-#attempt at using class for subscriber
+Kp = 2
+Ki = 0.5
+I = 0  # integral part of controller
+
+
+# attempt at using class for subscriber
 class Subscriber(object):
     def __init__(self):
         self.pub = rospy.Subscriber('yumi', String, self.sub_callback)
-        self.current_angles = ()  #dont know yet what the message looks like
+        self.current_angles = ()  # dont know yet what the message looks like
 
     def sub_callback(self, msg):
         self.current_angles = msg
 
 
-
-
 def run(goal_angles):
-    pid1 = PID(2, 0.1, 0.05, 0, None, (-1, 1), True, False)  #initialize PIDcontroller
-    pub1 = rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64, queue_size=1)  # initiate publishers, incomplete
+    pid1 = PID(2, 0.1, 0.05, 0, None, (-1, 1), True, False)  # initialize PIDcontroller
+    pub1 = rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64,
+                           queue_size=1)  # initiate publishers, incomplete
     pub2 = rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1)
     pub3 = rospy.Publisher('/yumi/joint_vel_controller_3_r/command', Float64, queue_size=1)
     pub4 = rospy.Publisher('/yumi/joint_vel_controller_4_r/command', Float64, queue_size=1)
@@ -39,26 +44,24 @@ def run(goal_angles):
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         rospy.spin
-        while subscriber.current_angles is None:  #for when node has just been started up
+        while subscriber.current_angles is None:  # for when node has just been started up
             rospy.spin
         velocities = get_velocities(goal_angles, subscriber.current_angles)
 
-
-        pub1.publish(velocities(0)) #rough example of how publications are gonnawork
+        pub1.publish(velocities(0))  # rough example of how publications are gonnawork
         pub2.publish(velocities(1))
         # rospy.loginfo(current_velocities)
 
         rate.sleep()
 
 
-
 def get_input():
     # for now generates an empty pose, adds it to an array(because compute_ik requires a PoseStamped[] array) and returns it
     # how should it take in inputs? parameter in launch file?
     p = PoseStamped()
-    p.header.frame_id = "yumi_base_link"
+    p.header.frame_id = "yumi_base_link"  # important for ik computation
     p.header.stamp = rospy.Time.now()
-    p.pose.position.x = 0.388638 # this placeholder pose is necessary because we need to send in a valid pose
+    p.pose.position.x = 0.388638  # this placeholder pose is necessary because we need to send in a valid pose
     p.pose.position.y = 0.328583
     p.pose.position.z = 0.278045
     p.pose.orientation.x = 0.715402
@@ -75,15 +78,21 @@ def compute_ik(goal_poses):
     # call diogos I_K service node and return solution
     # assume this node is launched
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
-    goal_angles = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
+    goal_angles = computeik("gripper_l_base", "",
+                            goal_poses)  # this service requires two strings, dont know what the second is
     print(goal_angles)
     return goal_angles
 
 
-def get_velocities(goal_angles, current_angles):  #P-controller, not implemented, returns array of velocities
+def get_velocities(goal_angles, current_angles):  # PI-controller
+    global I
+    error = current_angles - goal_angles
 
-    current_velocities = ()
+    current_velocities = Kp * error + I
+    I = I + Ki * error
+    print(current_velocities)
     return current_velocities
+
 
 if __name__ == '__main__':
     # this should be looped so that code runs from here when new input is detected
