@@ -16,7 +16,7 @@ from robot_kinematic_services.srv import InverseKinematics
 
 Kp = 2
 Ki = 0.5
-I = 0  # integral part of controller
+I = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 
 
 # attempt at using class for subscriber
@@ -35,11 +35,14 @@ def run(goal_angles):
 
     # initialize publishers
     publishers = list()
-    for i in range(6):
+    for i in range(7):
         publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_r/command', Float64, queue_size=1))
 
     # initialize subscriber
     subscriber = Subscriber()
+    #SUBSCRIBER NEEDS TO TAKE IN ANGLES HERE
+
+
 
     # LOOP
     while not rospy.is_shutdown():
@@ -48,14 +51,17 @@ def run(goal_angles):
                 rate.sleep
         else:
             # Compute the new velocities
-            velocities = get_velocities(goal_angles, subscriber.current_angles)
+            temp_angles = (1, 2, 1, 0, 1.4, 0.3, 0.2)
+            velocities = get_velocities(goal_angles, temp_angles)
+            #velocities = get_velocities(goal_angles, subscriber.current_angles)
 
             # Publish the new velocities
-            for i in range(6):
-                publishers[i].publish(velocities(i))
+            for i in range(7):
+                publishers[i].publish(velocities[i])
+                print("published " + str(velocities[i]) + " onto " + str(publishers[i]))
 
             # Update the current velocities by listening to sensors
-            subscriber.sub_callback()
+            #subscriber.sub_callback()
 
             # Repeat
             rate.sleep()
@@ -103,13 +109,18 @@ def compute_ik(goal_poses):
 
 def get_velocities(goal_angles, current_angles):  # PI-controller
     global I
-    error = current_angles - goal_angles
+    errors = []
+    current_velocities = []
+    for i in range(7):
+        print(len(current_angles))
+        print(" i is " + str(i))
+        print(len(goal_angles))
+        errors.append(current_angles[i] - goal_angles[i])
+        current_velocities.append(Kp * errors[i] + I[i])
 
-    current_velocities = Kp * error + I
-    # MISSING: CLAMPING VELOCITIES
-
-    # Update integral part
-    I = I + Ki * error
+        # Update integral part
+        I[i] = I[i] + Ki * errors[i]
+        # MISSING: CLAMPING VELOCITIES
 
     print(current_velocities)
     return current_velocities
