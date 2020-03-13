@@ -11,6 +11,7 @@ from std_msgs.msg import String
 from std_msgs.msg import Float64
 from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
+from sensor_msgs.msg import JointState
 # from simple_pid import PID
 # import control as cl
 
@@ -19,14 +20,13 @@ Ki = 0.5
 I = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 
 
-# attempt at using class for subscriber
 class Subscriber(object):
     def __init__(self):
-        self.pub = rospy.Subscriber('yumi', String, self.sub_callback)
-        self.current_angles = ()  # dont know yet what the message looks like
+        self.sub = rospy.Subscriber('/joint_states', JointState, self.sub_callback)
+        self.current_state = None
 
     def sub_callback(self, msg):
-        self.current_angles = msg
+        self.current_state = msg
 
 
 def run(goal_angles):
@@ -36,29 +36,41 @@ def run(goal_angles):
     # initialize publishers
     publishers = list()
     for i in range(7):
-        publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_r/command', Float64, queue_size=1))
+        publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_l/command', Float64, queue_size=1))
 
     # initialize subscriber
     subscriber = Subscriber()
-    #SUBSCRIBER NEEDS TO TAKE IN ANGLES HERE
 
 
 
     # LOOP
     while not rospy.is_shutdown():
         rospy.spin
-        if subscriber.current_angles is None:  # for when node has just been started up
+        if subscriber.current_state is None:  # for when node has just been started up
                 rate.sleep
         else:
+
+            print("~~~NEW LOOP~~~")
+            # Set current angles(this is a mess for now, still having problems with recieving current angles
+            current_angles = subscriber.current_state.position
+            print(subscriber.current_state.name)
+            current_angles_names = subscriber.current_state.name
+            current_angles2 = []
+            current_angles_names2 = []
+            for i in range (7): # Everything needs to be shifter 7 steps to access left controllers(temporary solution).
+                current_angles2.append(current_angles[i+7])
+                current_angles_names2.append(current_angles_names[i+7])
+            print("current angles are ")
+            print(current_angles_names2)
+            print(current_angles2)
+
             # Compute the new velocities
-            temp_angles = (1, 2, 1, 0, 1.4, 0.3, 0.2)
-            velocities = get_velocities(goal_angles, temp_angles)
-            #velocities = get_velocities(goal_angles, subscriber.current_angles)
+            velocities = get_velocities(goal_angles, current_angles2)
 
             # Publish the new velocities
             for i in range(7):
                 publishers[i].publish(velocities[i])
-                print("published " + str(velocities[i]) + " onto " + str(publishers[i]))
+                print("published " + str(velocities[i]) + " onto " + str(publishers[i].name))
 
             # Update the current velocities by listening to sensors
             #subscriber.sub_callback()
@@ -91,10 +103,6 @@ def compute_ik(goal_poses):
     # service node needs to be running
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
     solutions = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
-    print("here")
-    print(solutions)
-    print("then here")
-    print(solutions.sols[0].status.code)
 
     if solutions.sols[0].status.code == 0:
         goal_angles = solutions.sols[0].ik_solution
@@ -112,17 +120,18 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
     errors = []
     current_velocities = []
     for i in range(7):
-        print(len(current_angles))
-        print(" i is " + str(i))
-        print(len(goal_angles))
+
         errors.append(current_angles[i] - goal_angles[i])
         current_velocities.append(Kp * errors[i] + I[i])
 
         # Update integral part
         I[i] = I[i] + Ki * errors[i]
-        # MISSING: CLAMPING VELOCITIES
 
-    print(current_velocities)
+        # Clamp velocities to max of 3 Rad/s
+        current_velocities[i] = max(min(current_velocities[i], 3), -3)
+
+    print("current errors are ")
+    print(errors)
     return current_velocities
 
 
