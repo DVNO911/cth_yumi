@@ -1,8 +1,6 @@
 <launch>
 
-<include file = "$(find yumi_launch)/launch/yumi_gazebo_pos_control.launch" />
-<include file = "$(find robot_kinematic_services)/launch/robot_kinematic_services.launch" />
-
-<node name = "control_angle_ref" pkg="cth_yumi" type="control_angle_ref.py" />
+<rosparam file="$(find cth_yumi)/config/testpositions.yaml" />
+<node name = "control_angle_ref2" pkg="cth_yumi" type="control_angle_ref2.py" />
 
 </launch>

@@ -75,21 +75,23 @@ def run(goal_angles):
 
 
 def get_input():
-    # for now generates an empty pose, adds it to an array(because compute_ik requires a PoseStamped[] array) and returns it
-    # how should it take in inputs? parameter in launch file?
-    p = PoseStamped()
-    p.header.frame_id = "yumi_base_link"  # important for ik computation
-    p.header.stamp = rospy.Time.now() # currently not working?
-    p.pose.position.x = 0.288638  # this placeholder pose is necessary because we need to send in a valid pose
-    p.pose.position.y = 0.328583
-    p.pose.position.z = 0.478045
-    p.pose.orientation.x = 0.715402
-    p.pose.orientation.y = -0.201775
-    p.pose.orientation.z = 0.634136
-    p.pose.orientation.w = -0.212975
 
-    print(p)
-    desired_poses = [p]
+    # Parse YAML data into array of Posestamps
+    desired_poses = []
+    for i in range(1):
+        desired_poses.append(PoseStamped())
+        desired_poses[i].header.frame_id = "yumi_base_link"
+        desired_poses[i].header.stamp = rospy.Time.now()
+        desired_poses[i].pose.position.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/x')
+        desired_poses[i].pose.position.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/y')
+        desired_poses[i].pose.position.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/z')
+        desired_poses[i].pose.orientation.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/x')
+        desired_poses[i].pose.orientation.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/y')
+        desired_poses[i].pose.orientation.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/z')
+        desired_poses[i].pose.orientation.w = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/w')
+
+
+    print("code here")  # Why does this not print?
     return desired_poses
 
 
@@ -136,6 +138,7 @@ if __name__ == '__main__':
     # this should be looped so that code runs from here when new input is detected
     rospy.init_node('control_node', anonymous=True)  # initiate node
     goal_poses = get_input()  # input is of type PoseStamped[]
+    print(goal_poses)
     goal_angles = compute_ik(goal_poses)
 
     try:
