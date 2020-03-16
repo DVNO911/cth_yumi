@@ -35,8 +35,20 @@ def run(goal_angles):
 
     # initialize publishers
     publishers = list()
-    for i in range(7):
-        publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_l/command', Float64, queue_size=1))
+    # for i in range(7):
+    #    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_' + str(i+1) + '_l/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_1_l/command', Float64, queue_size=1))
+
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_2_l/command', Float64, queue_size=1))
+
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_7_l/command', Float64, queue_size=1))
+
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_3_l/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_l/command', Float64, queue_size=1))
+
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_l/command', Float64, queue_size=1))
+
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_l/command', Float64, queue_size=1))
 
     # initialize subscriber
     subscriber = Subscriber()
@@ -104,6 +116,7 @@ def compute_ik(goal_poses):
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
     solutions = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
 
+
     if solutions.sols[0].status.code == 0:
         goal_angles = solutions.sols[0].ik_solution
         print("IK COMPUTATION WORKED. ANSWER IS ")
@@ -121,7 +134,7 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
     current_velocities = []
     for i in range(7):
 
-        errors.append(current_angles[i] - goal_angles[i])
+        errors.append(goal_angles[i] - current_angles[i])
         current_velocities.append(Kp * errors[i] + I[i])
 
         # Update integral part
