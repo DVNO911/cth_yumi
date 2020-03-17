@@ -28,14 +28,16 @@ posestamp2:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.088638
+      x: 0.288638
       y: 0.328583
-      z: 0.078045
+      z: 0.478045
     orientation:
       x: 0.715402
-      y: -0.071775
-      z: 0.734136
+      y: -0.201775
+      z: 0.634136
       w: -0.212975
+
+
 
 posestamp3:
   header:
@@ -47,7 +49,7 @@ posestamp3:
       y: 0.328583
       z: 0.478045
     orientation:
-      x: 0.715402
+      x: 0.015402
       y: -0.201775
       z: 0.634136
       w: -0.212975

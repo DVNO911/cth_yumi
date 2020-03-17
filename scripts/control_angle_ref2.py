@@ -70,17 +70,15 @@ def run(goal_angles_r, goal_angles_l):
                 current_angles_l.append(subscriber.current_state.position[i+7])
 
 
-
             # Compute the new velocities
-            # velocities_r = get_velocities(goal_angles_r, current_angles_r)
+            velocities_r = get_velocities(goal_angles_r, current_angles_r)
             velocities_l = get_velocities(goal_angles_l, current_angles_l)
 
 
             # Publish the new velocities
             for i in range(7):
-                print("do nothing for now")
-                # publishers[i].publish(velocities_r[i])
-                # print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
+                publishers[i].publish(velocities_r[i])
+                print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
             for i in range(7):
                 publishers[i+7].publish(velocities_l[i])
                 print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
@@ -112,34 +110,45 @@ def get_input_r():
 
     # Empty for now
     desired_poses = []
+    for i in range(1, 2):
+        desired_poses.append(PoseStamped())
+        desired_poses[i-1].header.frame_id = "yumi_base_link"
+        desired_poses[i-1].header.stamp = rospy.Time.now()
+        desired_poses[i-1].pose.position.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/x')
+        desired_poses[i-1].pose.position.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/y')
+        desired_poses[i-1].pose.position.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/z')
+        desired_poses[i-1].pose.orientation.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/x')
+        desired_poses[i-1].pose.orientation.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/y')
+        desired_poses[i-1].pose.orientation.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/z')
+        desired_poses[i-1].pose.orientation.w = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/w')
 
     return desired_poses
 
 
-def compute_ik(goal_poses):
+def compute_ik(goal_poses, chain_end_effector_name):
     # call diogos I_K service node and return solution
     # service node needs to be running
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
-    solutions = computeik("gripper_l_base", "", goal_poses)  # this service requires two strings, dont know what the second is
+    solutions = computeik(chain_end_effector_name, "", goal_poses)  # this service requires two strings, dont know what the second is
 
-
-    if solutions.sols[0].status.code == 0:
-        goal_angles = solutions.sols[0].ik_solution
-        print("IK COMPUTATION WORKED. ANSWER IS ")
-        print(goal_angles)
-
-    else:
-        print("IK COMPUTATION FAILED")
+    for i in range(len(goal_poses)):
+        if solutions.sols[i].status.code == 0: # check if all computations worked
+            goal_angles = solutions.sols[0].ik_solution  # currently only returns one solution
+            print("IK COMPUTATION WORKED. ANSWER IS ")
+            print(goal_angles)
+        else:
+            print("IK COMPUTATION FAILED")
 
     return goal_angles
 
 
 def get_velocities(goal_angles, current_angles):  # PI-controller
+
     global I
     errors = []
     current_velocities = []
-    for i in range(7):
 
+    for i in range(7):
         errors.append(goal_angles[i] - current_angles[i])
         current_velocities.append(Kp * errors[i] + I[i])
 
@@ -149,19 +158,24 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
+
     print("current errors are ")
     print(errors)
     return current_velocities
 
 
 if __name__ == '__main__':
+    # Initiate node
+    rospy.init_node('control_node', anonymous=True)
 
-    rospy.init_node('control_node', anonymous=True)  # initiate node
-    goal_poses_l = get_input_l()  # input is of type PoseStamped[]
+    # Get inputs and compute inverse kinematics
     goal_poses_r = get_input_r()
-    goal_angles = compute_ik(goal_poses_l, goal_poses_r)
+    goal_poses_l = get_input_l()
+    goal_angles_l = compute_ik(goal_poses_l, "gripper_l_base")
+    goal_angles_r = compute_ik(goal_poses_r, "gripper_r_base")
 
+    # Run
     try:
-        run(goal_angles)
+        run(goal_angles_r, goal_angles_l)
     except rospy.ROSInterruptException:
         pass
