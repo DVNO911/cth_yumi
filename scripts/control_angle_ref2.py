@@ -23,12 +23,20 @@ class Subscriber(object):
         self.current_state = msg
 
 
-def run(goal_angles):
+def run(goal_angles_r, goal_angles_l):
     # Set loop frequency
     rate = rospy.Rate(10)
 
     # initialize publishers
     publishers = list()
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_7_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_3_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_r/command', Float64, queue_size=1))
+    publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_r/command', Float64, queue_size=1))
+
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_1_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_2_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_7_l/command', Float64, queue_size=1))
@@ -36,6 +44,8 @@ def run(goal_angles):
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_l/command', Float64, queue_size=1))
+
+    # MISSING: GRIPPER PUBLISHERS
 
     # initialize subscriber
     subscriber = Subscriber()
@@ -49,34 +59,40 @@ def run(goal_angles):
                 rate.sleep
         else:
             print("~~~NEW LOOP~~~")
-            # Set current angles(this is a mess for now)
-            current_angles = subscriber.current_state.position
+            print("names are")
             print(subscriber.current_state.name)
-            current_angles_names = subscriber.current_state.name
-            current_angles2 = []
-            current_angles_names2 = []
-            for i in range (7): # Everything needs to be shifter 7 steps to access left controllers(temporary solution).
-                current_angles2.append(current_angles[i+7])
-                current_angles_names2.append(current_angles_names[i+7])
-            print("current angles are ")
-            print(current_angles_names2)
-            print(current_angles2)
+
+            current_angles_r = []
+            current_angles_l = []
+            for i in range(7):
+                current_angles_r.append(subscriber.current_state.position[i])
+            for i in range(7):
+                current_angles_l.append(subscriber.current_state.position[i+7])
+
+
 
             # Compute the new velocities
-            velocities = get_velocities(goal_angles, current_angles2)
+            # velocities_r = get_velocities(goal_angles_r, current_angles_r)
+            velocities_l = get_velocities(goal_angles_l, current_angles_l)
+
 
             # Publish the new velocities
             for i in range(7):
-                publishers[i].publish(velocities[i])
-                print("published " + str(velocities[i]) + " onto " + str(publishers[i].name))
+                print("do nothing for now")
+                # publishers[i].publish(velocities_r[i])
+                # print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
+            for i in range(7):
+                publishers[i+7].publish(velocities_l[i])
+                print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
 
             # Repeat
             rate.sleep()
 
 
-def get_input():
+def get_input_l():
 
     # Parse YAML data into array of Posestamps
+    # Data is stored in /cth_yumi/config/..
     desired_poses = []
     for i in range(1):
         desired_poses.append(PoseStamped())
@@ -90,8 +106,13 @@ def get_input():
         desired_poses[i].pose.orientation.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/z')
         desired_poses[i].pose.orientation.w = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/w')
 
+    return desired_poses
 
-    print("code here")  # Why does this not print?
+def get_input_r():
+
+    # Empty for now
+    desired_poses = []
+
     return desired_poses
 
 
@@ -125,7 +146,7 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
         # Update integral part
         I[i] = I[i] + Ki * errors[i]
 
-        # Clamp velocities to max of 3 Rad/s
+        # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
     print("current errors are ")
@@ -135,11 +156,10 @@ def get_velocities(goal_angles, current_angles):  # PI-controller
 
 if __name__ == '__main__':
 
-    # this should be looped so that code runs from here when new input is detected
     rospy.init_node('control_node', anonymous=True)  # initiate node
-    goal_poses = get_input()  # input is of type PoseStamped[]
-    print(goal_poses)
-    goal_angles = compute_ik(goal_poses)
+    goal_poses_l = get_input_l()  # input is of type PoseStamped[]
+    goal_poses_r = get_input_r()
+    goal_angles = compute_ik(goal_poses_l, goal_poses_r)
 
     try:
         run(goal_angles)
