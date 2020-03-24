@@ -27,7 +27,8 @@ def run(goal_angles_r, goal_angles_l):
     # Set loop frequency
     rate = rospy.Rate(10)
 
-    # initialize publishers
+    # Initialize publishers
+    # Note: The order in which these are appended to the list matters! (1, 2, 7, 3, 4, 5, 6)
     publishers = list()
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1))
@@ -62,6 +63,7 @@ def run(goal_angles_r, goal_angles_l):
             print("names are")
             print(subscriber.current_state.name)
 
+            # Separate into LX/DX
             current_angles_r = []
             current_angles_l = []
             for i in range(7):
