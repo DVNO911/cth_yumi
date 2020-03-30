@@ -10,8 +10,8 @@ from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
 from sensor_msgs.msg import JointState
 
-Kp = 0.5
-Ki = 0.1
+Kp = 3.5
+Ki = 0.02
 I = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 
 class Subscriber(object):
