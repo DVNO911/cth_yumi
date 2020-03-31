@@ -2,7 +2,7 @@
 
 # Control System node that uses angle as reference
 # Node takes in a position, calls to calculate i_k, regulates velocities of each encoder by publishing onto the appropriate topics
-# Only works for left arm
+# THUMB RULE: RIGHT ARM FIRST, THEN LEFT ARM
 
 import rospy
 from std_msgs.msg import Float64
@@ -12,7 +12,9 @@ from sensor_msgs.msg import JointState
 
 Kp = 3.5
 Ki = 0.02
-I = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
+I_r = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
+I_l = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
+
 
 class Subscriber(object):
     def __init__(self):
@@ -30,6 +32,7 @@ def run(goal_angles_r, goal_angles_l):
     # Initialize publishers
     # Note: The order in which these are appended to the list matters! (1, 2, 7, 3, 4, 5, 6)
     publishers = list()
+
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_1_r/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_2_r/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_7_r/command', Float64, queue_size=1))
@@ -45,6 +48,7 @@ def run(goal_angles_r, goal_angles_l):
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_l/command', Float64, queue_size=1))
+
 
     # MISSING: GRIPPER PUBLISHERS
 
@@ -63,7 +67,7 @@ def run(goal_angles_r, goal_angles_l):
             print("names are")
             print(subscriber.current_state.name)
 
-            # Separate into LX/DX
+            # Separate into DX/LX
             current_angles_r = []
             current_angles_l = []
             for i in range(7):
@@ -73,8 +77,8 @@ def run(goal_angles_r, goal_angles_l):
 
 
             # Compute the new velocities
-            velocities_r = get_velocities(goal_angles_r, current_angles_r)
-            velocities_l = get_velocities(goal_angles_l, current_angles_l)
+            velocities_r = get_velocities_r(goal_angles_r, current_angles_r)
+            velocities_l = get_velocities_l(goal_angles_l, current_angles_l)
 
 
             # Publish the new velocities
@@ -87,6 +91,25 @@ def run(goal_angles_r, goal_angles_l):
 
             # Repeat
             rate.sleep()
+
+
+def get_input_r():
+
+    # Empty for now
+    desired_poses = []
+    for i in range(1, 2):
+        desired_poses.append(PoseStamped())
+        desired_poses[i-1].header.frame_id = "yumi_base_link"
+        desired_poses[i-1].header.stamp = rospy.Time.now()
+        desired_poses[i-1].pose.position.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/x')
+        desired_poses[i-1].pose.position.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/y')
+        desired_poses[i-1].pose.position.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/z')
+        desired_poses[i-1].pose.orientation.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/x')
+        desired_poses[i-1].pose.orientation.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/y')
+        desired_poses[i-1].pose.orientation.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/z')
+        desired_poses[i-1].pose.orientation.w = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/w')
+
+    return desired_poses
 
 
 def get_input_l():
@@ -108,26 +131,9 @@ def get_input_l():
 
     return desired_poses
 
-def get_input_r():
-
-    # Empty for now
-    desired_poses = []
-    for i in range(1, 2):
-        desired_poses.append(PoseStamped())
-        desired_poses[i-1].header.frame_id = "yumi_base_link"
-        desired_poses[i-1].header.stamp = rospy.Time.now()
-        desired_poses[i-1].pose.position.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/x')
-        desired_poses[i-1].pose.position.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/y')
-        desired_poses[i-1].pose.position.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/position/z')
-        desired_poses[i-1].pose.orientation.x = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/x')
-        desired_poses[i-1].pose.orientation.y = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/y')
-        desired_poses[i-1].pose.orientation.z = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/z')
-        desired_poses[i-1].pose.orientation.w = rospy.get_param('/posestamp' + str(i+1) + '/pose/orientation/w')
-
-    return desired_poses
-
 
 def compute_ik(goal_poses, chain_end_effector_name):
+
     # call diogos I_K service node and return solution
     # service node needs to be running
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
@@ -144,26 +150,49 @@ def compute_ik(goal_poses, chain_end_effector_name):
     return goal_angles
 
 
-def get_velocities(goal_angles, current_angles):  # PI-controller
+def get_velocities_r(goal_angles, current_angles):  # PI-controller
 
-    global I
+    global I_r
     errors = []
     current_velocities = []
 
     for i in range(7):
         errors.append(goal_angles[i] - current_angles[i])
-        current_velocities.append(Kp * errors[i] + I[i])
+        current_velocities.append(Kp * errors[i] + I_r[i])
 
         # Update integral part
-        I[i] = I[i] + Ki * errors[i]
+        I_r[i] = I_r[i] + Ki * errors[i]
 
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
 
-    print("current errors are ")
+    print("current errors for right arm are ")
     print(errors)
     return current_velocities
+
+
+def get_velocities_l(goal_angles, current_angles):  # PI-controller
+
+    global I_l
+    errors = []
+    current_velocities = []
+
+    for i in range(7):
+        errors.append(goal_angles[i] - current_angles[i])
+        current_velocities.append(Kp * errors[i] + I_l[i])
+
+        # Update integral part
+        I_l[i] = I_l[i] + Ki * errors[i]
+
+        # Clamp velocities to max of +/-3 Rad/s
+        current_velocities[i] = max(min(current_velocities[i], 3), -3)
+
+
+    print("current errors for left arm are ")
+    print(errors)
+    return current_velocities
+
 
 
 if __name__ == '__main__':

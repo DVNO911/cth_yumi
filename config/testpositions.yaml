@@ -28,9 +28,9 @@ posestamp2:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.288638
-      y: 0.328583
-      z: 0.478045
+      x: 0.356709
+      y: -0.25155
+      z: 0.400519
     orientation:
       x: 0.715402
       y: -0.201775
