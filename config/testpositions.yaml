@@ -2,9 +2,11 @@ number_int: 42
 
 list:
 - 1
-- 2 
+- 2
+- 3 
 - 4
 - 5
+- 6
 number_int2: 422
 
 posestamp1:
@@ -45,11 +47,58 @@ posestamp3:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.488638
-      y: 0.328583
-      z: 0.478045
+      x: 0.288631
+      y: 0.328582
+      z: 0.578045
     orientation:
-      x: 0.015402
+      x: 0.715402
       y: -0.201775
       z: 0.634136
       w: -0.212975
+
+posestamp4:
+  header:
+    stamp: 0
+    frame_id: "yumi_base_link"
+  pose:
+    position:
+      x: 0.356709
+      y: -0.25155
+      z: 0.400519
+    orientation:
+      x: 0.715402
+      y: -0.201775
+      z: 0.634136
+      w: -0.212975
+
+
+posestamp5:
+  header:
+    stamp: 0
+    frame_id: "yumi_base_link"
+  pose:
+    position:
+      x: 0.388638
+      y: 0.328583
+      z: 0.478045
+    orientation:
+      x: 0.715402
+      y: -0.201775
+      z: 0.634136
+      w: -0.212975
+
+posestamp6:
+  header:
+    stamp: 0
+    frame_id: "yumi_base_link"
+  pose:
+    position:
+      x: 0.356709
+      y: -0.25155
+      z: 0.400519
+    orientation:
+      x: 0.715402
+      y: -0.201775
+      z: 0.634136
+      w: -0.212975
+

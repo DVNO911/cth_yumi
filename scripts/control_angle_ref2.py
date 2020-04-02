@@ -146,6 +146,9 @@ def compute_ik(goal_poses, chain_end_effector_name):
             print(goal_angles)
         else:
             print("IK COMPUTATION FAILED")
+            print(solutions)
+            print
+            goal_angles=1
 
     return goal_angles
 
