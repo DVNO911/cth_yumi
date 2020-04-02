@@ -6,7 +6,7 @@ This is a package for controlling ABB's collaborative robot YuMi. It was written
 
 Please consult the guide on how to install and use this package. (currently found in basic_py_scripts repository)
 
-##Contributing
+## Contributing
 
 This package is currently only meant to be developed by students at Chalmers.
 
