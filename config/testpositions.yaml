@@ -8,7 +8,15 @@ list:
 - 5
 - 6
 number_int2: 422
+# Starting Positions Link 7 R
+#x: 0,362747
+#y: −0,317753
+#z: 0,246492
 
+# Start values for Link 7 L:
+#x: 0,379863
+#y: 0,319631
+#z: 0,269617
 posestamp1:
   header:
     stamp: 0
@@ -16,7 +24,7 @@ posestamp1:
   pose:
     position:
       x: 0.288638
-      y: 0.328583
+      y: -0.328583
       z: 0.478045
     orientation:
       x: 0.715402
@@ -31,7 +39,7 @@ posestamp2:
   pose:
     position:
       x: 0.356709
-      y: -0.25155
+      y: 0.25155
       z: 0.400519
     orientation:
       x: 0.715402
@@ -47,9 +55,9 @@ posestamp3:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.288631
-      y: 0.328582
-      z: 0.578045
+      x: 0.388631
+      y: -0.328582
+      z: 0.246492
     orientation:
       x: 0.715402
       y: -0.201775
@@ -61,10 +69,10 @@ posestamp4:
     stamp: 0
     frame_id: "yumi_base_link"
   pose:
-    position:
-      x: 0.356709
-      y: -0.25155
-      z: 0.400519
+    position: 
+      x: 0.379863
+      y: 0.319631
+      z: 0.269617
     orientation:
       x: 0.715402
       y: -0.201775
@@ -79,7 +87,7 @@ posestamp5:
   pose:
     position:
       x: 0.388638
-      y: 0.328583
+      y: -0.328583
       z: 0.478045
     orientation:
       x: 0.715402
@@ -94,7 +102,7 @@ posestamp6:
   pose:
     position:
       x: 0.356709
-      y: -0.25155
+      y: 0.25155
       z: 0.400519
     orientation:
       x: 0.715402

@@ -48,8 +48,7 @@ def run(goal_angles_r, goal_angles_l):
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_l/command', Float64, queue_size=1))
-#    publishers.append(rospy.Publisher("/yumi/gripper_l_effort_cmd", Float64, queue_size=1))
-#    publishers.append(rospy.Publisher("/yumi/gripper_r_effort_cmd", Float64, queue_size=1))
+
 
     # MISSING: GRIPPER PUBLISHERS
 
@@ -63,8 +62,7 @@ def run(goal_angles_r, goal_angles_l):
             if subscriber.current_state is None:
                     rate.sleep
             else:
-                #print(goal_poses_l0)
-                for z in range(2): #just a test loop, would like a if statement or a while loop to test against the error.
+                    
                     print("~~~NEW LOOP~~~")
                     print("names are")
                     print(subscriber.current_state.name)
@@ -90,109 +88,13 @@ def run(goal_angles_r, goal_angles_l):
                     for i in range(7):
                         publishers[i+7].publish(velocities_l[i])
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
-                        rate.sleep()
-                #x+=1
-#                gripper_l_cmd_msg = 10
-#                gripper_l_cmd_pub.publish(effort_command)
-                for z in range(2):
-                    print("~~~NEW LOOP~~~")
-                    print("names are")
-                    print(subscriber.current_state.name)
 
-                    # Separate into DX/LX
-                    current_angles_r = []
-                    current_angles_l = []
-                    for i in range(7):
-                        current_angles_r.append(subscriber.current_state.position[i])
-                    for i in range(7):
-                        current_angles_l.append(subscriber.current_state.position[i+7])
-
-
-                    # Compute the new velocities
-                    velocities_r = get_velocities_r(goal_angles_r[1], current_angles_r)
-                    velocities_l = get_velocities_l(goal_angles_l[1], current_angles_l)
-
-
-                    # Publish the new velocities
-                    for i in range(7):
-                        publishers[i].publish(velocities_r[i])
-                        print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
-                    for i in range(7):
-                        publishers[i+7].publish(velocities_l[i])
-                        print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
-
-
-
-                for z in range(1500):
-                    print("~~~NEW LOOP~~~")
-                    print("names are")
-                    print(subscriber.current_state.name)
-
-                    # Separate into DX/LX
-                    current_angles_r = []
-                    current_angles_l = []
-                    for i in range(7):
-                        current_angles_r.append(subscriber.current_state.position[i])
-                    for i in range(7):
-                        current_angles_l.append(subscriber.current_state.position[i+7])
-
-
-                    # Compute the new velocities
-                    velocities_r = get_velocities_r(goal_angles_r[2], current_angles_r)
-                    velocities_l = get_velocities_l(goal_angles_l[2], current_angles_l)
-
-
-                    # Publish the new velocities
-                    for i in range(7):
-                        publishers[i].publish(velocities_r[i])
-                        print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
-                    for i in range(7):
-                        publishers[i+7].publish(velocities_l[i])
-                        print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
                 # Repeat
                 rate.sleep()
 
-#Fix a nice loop that goes through all the inputs
-def get_input_r():
-
-    # Parse YAML data into array of Posestamps
-    # Data is stored in /cth_yumi/config/..
-    desired_poses = []
-    for i in range(1,4):
-        desired_poses.append(PoseStamped())
-        desired_poses[i-1].header.frame_id = "yumi_base_link"
-        desired_poses[i-1].header.stamp = rospy.Time.now()
-        desired_poses[i-1].pose.position.x = rospy.get_param('/posestamp' + str(i) + '/pose/position/x')
-        desired_poses[i-1].pose.position.y = rospy.get_param('/posestamp' + str(i) + '/pose/position/y')
-        desired_poses[i-1].pose.position.z = rospy.get_param('/posestamp' + str(i) + '/pose/position/z')
-        desired_poses[i-1].pose.orientation.x = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/x')
-        desired_poses[i-1].pose.orientation.y = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/y')
-        desired_poses[i-1].pose.orientation.z = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/z')
-        desired_poses[i-1].pose.orientation.w = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/w')
-
-    return desired_poses
-
-def get_input_l():
-
-    # Parse YAML data into array of Posestamps
-    # Data is stored in /cth_yumi/config/..
-    desired_poses = []
-    for i in range(4-7):
-        desired_poses.append(PoseStamped())
-        desired_poses[i-4].header.frame_id = "yumi_base_link"
-        desired_poses[i-4].header.stamp = rospy.Time.now()
-        desired_poses[i-4].pose.position.x = rospy.get_param('/posestamp' + str(i) + '/pose/position/x')
-        desired_poses[i-4].pose.position.y = rospy.get_param('/posestamp' + str(i) + '/pose/position/y')
-        desired_poses[i-4].pose.position.z = rospy.get_param('/posestamp' + str(i) + '/pose/position/z')
-        desired_poses[i-4].pose.orientation.x = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/x')
-        desired_poses[i-4].pose.orientation.y = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/y')
-        desired_poses[i-4].pose.orientation.z = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/z')
-        desired_poses[i-4].pose.orientation.w = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/w')
-
-    return desired_poses
-
 
 def get_input_r0():
+
     # Empty for now
     desired_poses = []
     for i in range(1):
@@ -247,10 +149,7 @@ def get_input_r2():
 
 
 def get_input_l0():
-    # Start values for Link 7 L:
-    #x: 0,379863
-    #y: 0,319631
-    #z: 0,269617
+
     # Parse YAML data into array of Posestamps
     # Data is stored in /cth_yumi/config/..
     desired_poses = []
@@ -307,7 +206,6 @@ def get_input_l2():
     return desired_poses
 
 
-
 def compute_ik(goal_poses, chain_end_effector_name):
 
     # call diogos I_K service node and return solution
@@ -326,7 +224,6 @@ def compute_ik(goal_poses, chain_end_effector_name):
             goal_angles=0
 
     return goal_angles
-
 
 
 
@@ -374,39 +271,39 @@ def get_velocities_l(goal_angles, current_angles):  # PI-controller
     return current_velocities
 
 
+
 if __name__ == '__main__':
     # Initiate node
     rospy.init_node('control_node', anonymous=True)
-    goal_poses_r=get_input_r()
-    goal_poses_l=get_input_l()
-    goal_angle_R= []
-    goal_angle_L=[]
-    goal_anglerr=compute_ik(goal_poses_r[0],"gripper_r_base")
 
     # Get inputs and compute inverse kinematics
     goal_poses_r0 = get_input_r0()
     goal_poses_l0 = get_input_l0()
     goal_poses_r1 = get_input_r1()
     goal_poses_l1 = get_input_l1()
+    print("hej")
     goal_poses_r2 = get_input_r2()
     goal_poses_l2 = get_input_l2()
-    goal_total = get_input_ll()
     goal_angles_l0 = compute_ik(goal_poses_l0, "gripper_l_base")
     goal_angles_r0 = compute_ik(goal_poses_r0, "gripper_r_base")
-    #print(goal_poses_l0)
-    #print(goal_poses_l1)
-    #print(goal_poses_l2)
+    print("hej")
+    print(goal_poses_l0)
+    print(goal_poses_l1)
+    print(goal_poses_l2)
+
     goal_angles_l1 = compute_ik(goal_poses_l1, "gripper_l_base")
+    print("hej")
     goal_angles_r1 = compute_ik(goal_poses_r1, "gripper_r_base")
     goal_angles_l2 = compute_ik(goal_poses_l2, "gripper_l_base")
     goal_angles_r2 = compute_ik(goal_poses_r2, "gripper_r_base")
     goal_angles_r=[]
     goal_angles_l=[]
     goal_angles_r=[goal_angles_r0, goal_angles_r1, goal_angles_r2]
-    goal_angles_l = [goal_angles_l0, compute_ik(goal_poses_l1, "gripper_l_base"), goal_angles_l2]
+    goal_angles_l = [goal_angles_l0, goal_angles_l1, goal_angles_l2]
 
     # Run
     try:
         run(goal_angles_r, goal_angles_l)
     except rospy.ROSInterruptException:
         pass
+
