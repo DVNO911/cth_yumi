@@ -39,15 +39,13 @@ posestamp2:
   pose:
     position:
       x: 0.356709
-      y: 0.25155
+      y: -0.25155
       z: 0.400519
     orientation:
       x: 0.715402
       y: -0.201775
       z: 0.634136
       w: -0.212975
-
-
 
 posestamp3:
   header:
@@ -64,19 +62,41 @@ posestamp3:
       z: 0.634136
       w: -0.212975
 
+#tester av orientation
+#original orientations
+#   x: 0.715402
+#   y: -0.201775
+#   z: 0.634136
+#   w: -0.212975
+
+
+
+
+# x verkar styra end jointen upp och nedåt
+# testat x= 0.521200 testat 0.121200 och mindre tal ger mer "uppåt"
+# x=1 krashar 0.8 krash 0.75 krash
+#olika positioner tillåter olika orientations.... 
+#Y tester. Verkar som det är höger och vänster
+#-0.401775 funkar inte -0.3 funkar inte. -0.1 däremot
+#+0.1 funkar +0.2 funkar +0.3 funkar inte
+#z test
+#+0.531 funkar inte 
+
+
+
 posestamp4:
   header:
     stamp: 0
     frame_id: "yumi_base_link"
   pose:
-    position: 
-      x: 0.379863
-      y: 0.319631
-      z: 0.269617
+    position:
+      x: 0.385236
+      y: 0.339993
+      z: 0.100000
     orientation:
-      x: 0.715402
+      x: 0.415402
       y: -0.201775
-      z: 0.634136
+      z: 0.434136
       w: -0.212975
 
 
@@ -87,8 +107,8 @@ posestamp5:
   pose:
     position:
       x: 0.388638
-      y: -0.328583
-      z: 0.478045
+      y: 0.319631
+      z: 0.026000
     orientation:
       x: 0.715402
       y: -0.201775

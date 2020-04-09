@@ -89,6 +89,10 @@ def run(goal_angles_r, goal_angles_l):
                         publishers[i+7].publish(velocities_l[i])
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
 
+                        # x+=1
+                        #                gripper_l_cmd_msg = 10
+                        #                gripper_l_cmd_pub.publish(effort_command)
+
                 # Repeat
                 rate.sleep()
 
