@@ -239,13 +239,7 @@ if __name__ == '__main__':
     goal_poses_r=get_input_r()
     goal_poses_l=get_input_l()
     goal_angle_r=compute_ik(goal_poses_r,"gripper_r_base")
-    print("mellan")
     goal_angle_l=compute_ik(goal_poses_l,"gripper_l_base")
-
-    print("din mamma")
-    #goal_angle_r=[goal_anglerr[0],goal_anglerr[1],goal_anglerr[2], goal_anglerr[3], goal_anglerr[4], goal_anglerr[5],goal_anglerr[6]]
-    #goal_angle_l=[goal_anglell[0],goal_anglell[1],goal_anglell[2], goal_anglell[3], goal_anglell[4], goal_anglell[5],goal_anglell[6]]
-
 
     # Run
     try:
