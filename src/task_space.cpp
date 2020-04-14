@@ -3,14 +3,23 @@
 #include <generic_control_toolbox/kdl_manager.hpp>
 
 
-// sensor_msgs::JointState state;
+sensor_msgs::JointState state;
 float Kp = 3.5; 
-String chain_end_effector_name_r = "gripper_r_base"; // Kept as global variables because it might be useful to use other frames as reference
-String chain_end_effector_name_l = "gripper_l_base";
+std::string chain_end_effector_name_r = "gripper_r_base"; // Kept as global variables because it might be useful to use other frames as reference
+std::string chain_end_effector_name_l = "gripper_l_base";
 
 void stateCb(const sensor_msgs::JointState::ConstPtr &msg)
 {
   state = *msg;
+}
+
+KDL::Vector getDesiredPosition(){
+  KDL::Vector desired_position;
+  // TO DO: Parse from YAMLfile
+  desired_position.x(0.288638);
+  desired_position.y(-0.328583);
+  desired_position.z(0.478045);
+  return desired_position;
 }
 
 int main (int argc, char ** argv)
@@ -26,13 +35,13 @@ int main (int argc, char ** argv)
   // Publishers
   // ros::Publisher command_pub = nh.advertise<sensor_msgs::JointState>("/joint_command", 1);
   std::list<ros::Publisher> publishers;
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_1_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_2_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_7_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_3_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_4_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_5_r/command", 1)
-  publishers.append(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_6_r/command", 1)
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_1_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_2_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_7_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_3_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_4_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_5_r/command", 1));
+  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_6_r/command", 1));
 
   // Initialize a KDL manager on the robot's left arm
   generic_control_toolbox::KDLManager manager("yumi_base_link");
@@ -63,7 +72,7 @@ int main (int argc, char ** argv)
       manager.getVelIK(chain_end_effector_name_r, state, command_vel, q_dot);
       command = state;
       manager.getJointState(chain_end_effector_name_r, q_dot.data, command);
-      command_pub.publish(command);
+      publishers.front().publish(command.velocity[0]);
     }
 
     ros::spinOnce();
@@ -73,11 +82,3 @@ int main (int argc, char ** argv)
   return 0;
 }
 
-KDL::Vector getDesiredPosition(){
-  KDL::Vector desired_position;
-  // TO DO: Parse from YAMLfile
-  desired_position.x(0.288638);
-  desired_position.y(-0.328583);
-  desired_position.z(0.478045);
-  return desired_position;
-}
