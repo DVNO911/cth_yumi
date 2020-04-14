@@ -64,7 +64,7 @@ def run(goal_angles_r, goal_angles_l):
                     rate.sleep
             else:
                 #print(goal_poses_l0)
-                for z in range(500): #just a test loop, would like a if statement or a while loop to test against the error.
+                for z in range(2000): #just a test loop, would like a if statement or a while loop to test against the error.
                     print("~~~NEW LOOP~~~")
                     print("names are")
                     print(subscriber.current_state.name)
@@ -92,7 +92,7 @@ def run(goal_angles_r, goal_angles_l):
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
 
 
-                for z in range(500):
+                for z in range(2000):
                     print("~~~NEW LOOP~~~")
                     print("names are")
                     print(subscriber.current_state.name)

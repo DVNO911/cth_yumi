@@ -111,7 +111,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
+ INCLUDE_DIRS 
 #  LIBRARIES cth_yumi
   CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs sensor_msgs message_runtime robot_kinematic_services generic_control_toolbox
 #  DEPENDS system_lib
@@ -139,7 +139,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(task_space src/task_space.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -152,8 +152,6 @@ add_executable(task_space src/task_space.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(task_space ${catkin_LIBRARIES})
-add_dependencies(task_space ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
