@@ -1,10 +1,13 @@
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <std_msgs/String.h>
+
+#include <std_msgs/Float64.h>
 #include <generic_control_toolbox/kdl_manager.hpp>
 
 
-sensor_msgs::JointState state;
-float Kp = 3.5; 
+sensor_msgs::JointState state; // The current state as recorded by the subscriber 
+float Kp = 2.5; 
 std::string chain_end_effector_name_r = "gripper_r_base"; // Kept as global variables because it might be useful to use other frames as reference
 std::string chain_end_effector_name_l = "gripper_l_base";
 
@@ -33,18 +36,21 @@ int main (int argc, char ** argv)
   ros::Subscriber state_sub = nh.subscribe("/joint_states", 1, &stateCb);
 
   // Publishers
-  // ros::Publisher command_pub = nh.advertise<sensor_msgs::JointState>("/joint_command", 1);
-  std::list<ros::Publisher> publishers;
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_1_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_2_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_7_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_3_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_4_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_5_r/command", 1));
-  publishers.push_back(nh.advertise<sensor_msgs::JointState>("/yumi/joint_vel_controller_6_r/command", 1));
+  ros::Publisher pubs[] = {nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_1_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_2_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_7_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_3_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_4_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_5_r/command", 1),
+                           nh.advertise<std_msgs::Float64>("/yumi/joint_vel_controller_6_r/command", 1),
+                          };
+
+
 
   // Initialize a KDL manager on the robot's left arm
-  generic_control_toolbox::KDLManager manager("yumi_base_link");
+  generic_control_toolbox::KDLManager manager("yumi_base_link", nh);
+  // manager.getParam();
+  
   manager.initializeArm(chain_end_effector_name_r);
 
   KDL::Frame pose;
@@ -59,12 +65,15 @@ int main (int argc, char ** argv)
   // LOOP
   while (ros::ok())
   {
+    // ROS_INFO_STREAM(state);
+    // sensor_msgs::JointState state_r = separateState(state);
     // Get the end-effector pose as a KDL::Frame.
     if (manager.getEefPose(chain_end_effector_name_r, state, pose))
     {
+      ROS_INFO_STREAM("getEefPose computed");
       error = desired_position - pose.p;
       command_vel.vel = Kp*error;
-      ROS_INFO_THROTTLE(Kp,
+      ROS_INFO_THROTTLE(0.1,
                         "Position error: (%.2f, %.2f, %.2f)",
                         error.x(), error.y(), error.z());
 
@@ -72,7 +81,17 @@ int main (int argc, char ** argv)
       manager.getVelIK(chain_end_effector_name_r, state, command_vel, q_dot);
       command = state;
       manager.getJointState(chain_end_effector_name_r, q_dot.data, command);
-      publishers.front().publish(command.velocity[0]);
+
+    
+      // Publish velocities
+      pubs[0].publish(command.velocity[0]);
+      pubs[1].publish(command.velocity[1]);
+      pubs[2].publish(command.velocity[2]);
+      pubs[3].publish(command.velocity[3]);
+      pubs[4].publish(command.velocity[4]);
+      pubs[5].publish(command.velocity[5]);
+      pubs[6].publish(command.velocity[6]);
+
     }
 
     ros::spinOnce();

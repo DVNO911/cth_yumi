@@ -40,7 +40,7 @@ posestamp2:
     position:
       x: 0.356709
       y: -0.25155
-      z: 0.400519
+      z: 0.200519
     orientation:
       x: 0.715402
       y: -0.201775
@@ -69,6 +69,22 @@ posestamp3:
 #   z: 0.634136
 #   w: -0.212975
 
+#posestamp5:
+#  header:
+#    stamp: 0
+#    frame_id: "yumi_base_link"
+#  pose:
+#    position:
+#      x: 0.388638
+#      y: 0.319631
+#      z: 0.026000
+#    orientation:
+#      x: 0
+#      y: 1
+#      z: 0
+#      w: -0.000000
+
+
 
 
 
@@ -80,9 +96,10 @@ posestamp3:
 #-0.401775 funkar inte -0.3 funkar inte. -0.1 däremot
 #+0.1 funkar +0.2 funkar +0.3 funkar inte
 #z test
-#+0.531 funkar inte 
+#+0.531 funkar inte på pose 5....
 
-
+#Allt ovanför är en lögn
+#X=1 Är rakt ner 
 
 posestamp4:
   header:
@@ -92,13 +109,12 @@ posestamp4:
     position:
       x: 0.385236
       y: 0.339993
-      z: 0.100000
+      z: 0.264575
     orientation:
-      x: 0.415402
-      y: -0.201775
-      z: 0.434136
-      w: -0.212975
-
+      x: 0.6613301
+      y: -0.3410208
+      z: 0.6637714
+      w: 0.0758612
 
 posestamp5:
   header:
@@ -106,14 +122,14 @@ posestamp5:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.388638
-      y: 0.319631
-      z: 0.026000
+      x: 0.259721
+      y: 0.120201
+      z: 0.211012
     orientation:
-      x: 0.715402
-      y: -0.201775
-      z: 0.634136
-      w: -0.212975
+      x: 0.3826834
+      y: 0
+      z: 0
+      w: 0.9238795
 
 posestamp6:
   header:
@@ -129,4 +145,15 @@ posestamp6:
       y: -0.201775
       z: 0.634136
       w: -0.212975
+
+
+kdl_manager:
+  eps: 0.01
+  max_tf_attempts: 10
+  ikvel_solver: nso
+  nso_weight: 0
+  ik_angle_tolerance: 0.01
+  ik_pos_tolerance: 0.005
+  gravity_in_base_link: [0, 0, -9.8]
+
 
