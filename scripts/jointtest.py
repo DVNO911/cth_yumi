@@ -9,7 +9,6 @@ from std_msgs.msg import Float64
 from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
 from sensor_msgs.msg import JointState
-
 Kp = 3.5
 Ki = 0.02
 I_r = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
@@ -64,7 +63,7 @@ def run(goal_angles_r, goal_angles_l):
                     rate.sleep
             else:
                 #print(goal_poses_l0)
-                for z in range(2000): #just a test loop, would like a if statement or a while loop to test against the error.
+                for z in range(4000): #just a test loop, would like a if statement or a while loop to test against the error.
                     print("~~~NEW LOOP~~~")
                     print("names are")
                     print(subscriber.current_state.name)
@@ -92,7 +91,7 @@ def run(goal_angles_r, goal_angles_l):
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
 
 
-                for z in range(2000):
+                for z in range(4000):
                     print("~~~NEW LOOP~~~")
                     print("names are")
                     print(subscriber.current_state.name)

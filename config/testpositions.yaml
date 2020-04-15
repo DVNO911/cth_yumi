@@ -79,12 +79,16 @@ posestamp3:
 #      y: 0.319631
 #      z: 0.026000
 #    orientation:
+#      x: 0.1786622
+#     y: 0.7361919
+#      z: 0.1854725
+#      w: 0.6258604
+
+#Dröm orientations
 #      x: 0
-#      y: 1
-#      z: 0
-#      w: -0.000000
-
-
+#      y: 0.7071068
+#      z: 0.
+#      w: 0.7071068
 
 
 
@@ -107,14 +111,14 @@ posestamp4:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.385236
-      y: 0.339993
-      z: 0.264575
+      x: 0.493576
+      y: 0.317959
+      z: 0.234764
     orientation:
-      x: 0.6613301
-      y: -0.3410208
-      z: 0.6637714
-      w: 0.0758612
+      x: 0
+      y: 0
+      z: 0
+      w: 1
 
 posestamp5:
   header:
@@ -122,14 +126,14 @@ posestamp5:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.259721
-      y: 0.120201
-      z: 0.211012
+      x: 0.493576
+      y: 0.317959
+      z: 0.234764
     orientation:
-      x: 0.3826834
-      y: 0
-      z: 0
-      w: 0.9238795
+      x: -0.5
+      y: 0.5
+      z: -0.5
+      w: 0.5
 
 posestamp6:
   header:
