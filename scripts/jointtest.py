@@ -14,6 +14,11 @@ Ki = 0.02
 I_r = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 I_l = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 x=0
+close=20
+open=-20
+gripper_l_cmd_msg = close
+gripper_r_cmd_msg = close
+
 
 class Subscriber(object):
     def __init__(self):
@@ -47,12 +52,11 @@ def run(goal_angles_r, goal_angles_l):
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_4_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_5_l/command', Float64, queue_size=1))
     publishers.append(rospy.Publisher('/yumi/joint_vel_controller_6_l/command', Float64, queue_size=1))
-#    publishers.append(rospy.Publisher("/yumi/gripper_l_effort_cmd", Float64, queue_size=1))
-#    publishers.append(rospy.Publisher("/yumi/gripper_r_effort_cmd", Float64, queue_size=1))
-
     # MISSING: GRIPPER PUBLISHERS
+    publishers.append(rospy.Publisher("/yumi/gripper_l_effort_cmd", Float64, queue_size=1))
+    publishers.append(rospy.Publisher("/yumi/gripper_r_effort_cmd", Float64, queue_size=1))
 
-    # initialize subscriber
+# initialize subscriber
     subscriber = Subscriber()
 
     # LOOP
@@ -63,6 +67,8 @@ def run(goal_angles_r, goal_angles_l):
                     rate.sleep
             else:
                 #print(goal_poses_l0)
+                publishers[14].publish(open)
+                publishers[15].publish(open)
                 for z in range(4000): #just a test loop, would like a if statement or a while loop to test against the error.
                     print("~~~NEW LOOP~~~")
                     print("names are")
@@ -90,7 +96,8 @@ def run(goal_angles_r, goal_angles_l):
                         publishers[i+7].publish(velocities_l[i])
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
 
-
+                publishers[14].publish(close)
+                publishers[15].publish(close)
                 for z in range(4000):
                     print("~~~NEW LOOP~~~")
                     print("names are")

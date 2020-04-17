@@ -23,14 +23,14 @@ posestamp1:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.288638
-      y: -0.328583
-      z: 0.478045
+      x: 0.493576
+      y: -0.317959
+      z: 0.234764
     orientation:
-      x: 0.715402
-      y: -0.201775
-      z: 0.634136
-      w: -0.212975
+      x: 0
+      y: 0
+      z: 0
+      w: 1
 
 posestamp2:
   header:
@@ -38,14 +38,14 @@ posestamp2:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.356709
-      y: -0.25155
-      z: 0.200519
+      x: 0.493576
+      y: -0.317959
+      z: 0.1
     orientation:
-      x: 0.715402
-      y: -0.201775
-      z: 0.634136
-      w: -0.212975
+      x: -0.5
+      y: 0.5
+      z: -0.5
+      w: 0.5
 
 posestamp3:
   header:
@@ -108,14 +108,14 @@ posestamp4:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.493576
-      y: 0.317959
-      z: 0.234764
+      x: 0.325445
+      y: 0.347505
+      z: 0.1
     orientation:
       x: 0
-      y: 0
+      y: 0.7071068
       z: 0
-      w: 1
+      w: 0.7071068
 
 
 posestamp5:
@@ -124,9 +124,9 @@ posestamp5:
     frame_id: "yumi_base_link"
   pose:
     position:
-      x: 0.493576
-      y: 0.317959
-      z: 0.234764
+      x: 0.385445
+      y: 0.347505
+      z: 0.01
     orientation:
       x: -0.5
       y: 0.5

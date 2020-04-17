@@ -56,7 +56,7 @@
 
 	<!-- Call Gazebo -->
 	<include file="$(find gazebo_ros)/launch/empty_world.launch">
-	  <arg name="world_name" value="$(find yumi_gazebo)/worlds/yumi.world"/>
+	  <arg name="world_name" value="$(find cth_yumi)/worlds/work.world"/>
 	    <arg name="paused" value="true"/>
 	    <arg name="use_sim_time" value="true"/>
 	    <arg name="gui" value="true"/>
