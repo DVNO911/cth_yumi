@@ -3,7 +3,7 @@
 # Control System node that uses angle as reference
 # Node takes in a position, calls to calculate i_k, regulates velocities of each encoder by publishing onto the appropriate topics
 # THUMB RULE: RIGHT ARM FIRST, THEN LEFT ARM
-
+import numpy as np
 import rospy
 from std_msgs.msg import Float64
 from geometry_msgs.msg import *
@@ -66,14 +66,14 @@ def run(goal_angles_r, goal_angles_l):
             if subscriber.current_state is None:
                     rate.sleep
             else:
+                y=0
                 #print(goal_poses_l0)
                 publishers[14].publish(open)
                 publishers[15].publish(open)
-                for z in range(4000): #just a test loop, would like a if statement or a while loop to test against the error.
-                    print("~~~NEW LOOP~~~")
-                    print("names are")
-                    print(subscriber.current_state.name)
-                    print("1")
+                while y < 10000:
+                    #print("~~~NEW LOOP~~~")
+                    #print("names are")
+                    #print(subscriber.current_state.name)
                     # Separate into DX/LX
                     current_angles_r = []
                     current_angles_l = []
@@ -91,18 +91,22 @@ def run(goal_angles_r, goal_angles_l):
                     # Publish the new velocities
                     for i in range(7):
                         publishers[i].publish(velocities_r[i])
-                        print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
+                    #    print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
                     for i in range(7):
                         publishers[i+7].publish(velocities_l[i])
-                        print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
+                    #    print("published " + str(velocities_l[i]) + " onto " + str(publishers[i+7].name))
+                    while np.sum(np.absolute(errors_r)) < 0.01 and np.sum(np.absolute(errors_l)) < 0.01 and y < 10000:
+                        y +=0.1
 
-                publishers[14].publish(close)
-                publishers[15].publish(close)
-                for z in range(4000):
-                    print("~~~NEW LOOP~~~")
-                    print("names are")
-                    print(subscriber.current_state.name)
-                    print("2")
+
+                y=0
+                publishers[14].publish(open)
+                publishers[15].publish(open)
+
+                while y < 10000:
+                    #print("~~~NEW LOOP~~~")
+                    #print("names are")
+                    #print(subscriber.current_state.name)
                     # Separate into DX/LX
                     current_angles_r = []
                     current_angles_l = []
@@ -122,6 +126,72 @@ def run(goal_angles_r, goal_angles_l):
                     for i in range(7):
                         publishers[i + 7].publish(velocities_l[i])
                         print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
+                    while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
+                        y +=0.1
+
+                y = 0
+                while y < 10000:
+                    print("~~~NEW LOOP~~~")
+                    print("names are")
+                    print(subscriber.current_state.name)
+                    print("2")
+                    # Separate into DX/LX
+                    current_angles_r = []
+                    current_angles_l = []
+                    for i in range(7):
+                        current_angles_r.append(subscriber.current_state.position[i])
+                    for i in range(7):
+                        current_angles_l.append(subscriber.current_state.position[i + 7])
+
+                    # Compute the new velocities
+                    velocities_r = get_velocities_r(goal_angles_r[2], current_angles_r)
+                    velocities_l = get_velocities_l(goal_angles_l[2], current_angles_l)
+
+                    # Publish the new velocities
+                    for i in range(7):
+                        publishers[i].publish(velocities_r[i])
+                        print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
+                    for i in range(7):
+                        publishers[i + 7].publish(velocities_l[i])
+                        print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
+                    while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
+                        y +=0.1
+
+                y =0
+
+                while y < 10000:
+                    print("~~~NEW LOOP~~~")
+                    print("names are")
+                    print(subscriber.current_state.name)
+                    print("2")
+                    # Separate into DX/LX
+                    current_angles_r = []
+                    current_angles_l = []
+                    for i in range(7):
+                        current_angles_r.append(subscriber.current_state.position[i])
+                    for i in range(7):
+                        current_angles_l.append(subscriber.current_state.position[i + 7])
+
+                    # Compute the new velocities
+                    velocities_r = get_velocities_r(goal_angles_r[3], current_angles_r)
+                    velocities_l = get_velocities_l(goal_angles_l[3], current_angles_l)
+
+                    # Publish the new velocities
+                    for i in range(7):
+                        publishers[i].publish(velocities_r[i])
+                        print("published " + str(velocities_r[i]) + " onto " + str(publishers[i].name))
+                    for i in range(7):
+                        publishers[i + 7].publish(velocities_l[i])
+                        print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
+                    while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
+                        y +=0.1
+
+                y =0
+
+
+                #Grab the object
+                publishers[14].publish(close)
+                publishers[15].publish(close)
 
                 # Repeat
                 rate.sleep()
@@ -132,7 +202,7 @@ def get_input_r():
     # Parse YAML data into array of Posestamps
     # Data is stored in /cth_yumi/config/..
     desired_poses = []
-    for i in range(1,4):
+    for i in range(1,5):
         desired_poses.append(PoseStamped())
         desired_poses[i-1].header.frame_id = "yumi_base_link"
         desired_poses[i-1].header.stamp = rospy.Time.now()
@@ -151,17 +221,17 @@ def get_input_l():
     # Parse YAML data into array of Posestamps
     # Data is stored in /cth_yumi/config/..
     desired_poses = []
-    for i in range(4,7):
+    for i in range(5, 9):
         desired_poses.append(PoseStamped())
-        desired_poses[i-4].header.frame_id = "yumi_base_link"
-        desired_poses[i-4].header.stamp = rospy.Time.now()
-        desired_poses[i-4].pose.position.x = rospy.get_param('/posestamp' + str(i) + '/pose/position/x')
-        desired_poses[i-4].pose.position.y = rospy.get_param('/posestamp' + str(i) + '/pose/position/y')
-        desired_poses[i-4].pose.position.z = rospy.get_param('/posestamp' + str(i) + '/pose/position/z')
-        desired_poses[i-4].pose.orientation.x = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/x')
-        desired_poses[i-4].pose.orientation.y = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/y')
-        desired_poses[i-4].pose.orientation.z = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/z')
-        desired_poses[i-4].pose.orientation.w = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/w')
+        desired_poses[i-5].header.frame_id = "yumi_base_link"
+        desired_poses[i-5].header.stamp = rospy.Time.now()
+        desired_poses[i-5].pose.position.x = rospy.get_param('/posestamp' + str(i) + '/pose/position/x')
+        desired_poses[i-5].pose.position.y = rospy.get_param('/posestamp' + str(i) + '/pose/position/y')
+        desired_poses[i-5].pose.position.z = rospy.get_param('/posestamp' + str(i) + '/pose/position/z')
+        desired_poses[i-5].pose.orientation.x = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/x')
+        desired_poses[i-5].pose.orientation.y = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/y')
+        desired_poses[i-5].pose.orientation.z = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/z')
+        desired_poses[i-5].pose.orientation.w = rospy.get_param('/posestamp' + str(i) + '/pose/orientation/w')
 
     return desired_poses
 
@@ -171,6 +241,8 @@ def compute_ik(goal_poses, chain_end_effector_name):
 
     # call diogos I_K service node and return solution
     # service node needs to be running
+    #IF YOU GET A OUT OF INDEX ERROR, that may be because one of the computation failed
+
     computeik = rospy.ServiceProxy('/compute_ik', InverseKinematics)
     solutions = computeik(chain_end_effector_name, "", goal_poses)  # this service requires two strings, dont know what the second is
 
@@ -179,7 +251,9 @@ def compute_ik(goal_poses, chain_end_effector_name):
     goal_angles=list(range(len(goal_poses)))
     for i in range(len(goal_poses)):
         print(i)
+        print("Solution")
         print(solutions.sols[i].ik_solution)
+
         if solutions.sols[i].status.code == 0: # check if all computations worked
             goal_angles[i] = solutions.sols[i].ik_solution  # currently only returns one solution
             print("IK COMPUTATION WORKED. ANSWER IS ")
@@ -187,6 +261,7 @@ def compute_ik(goal_poses, chain_end_effector_name):
         else:
             print(solutions)
             print("IK COMPUTATION FAILED")
+            print("this one failed", i)
             goal_angles=[0, 0 , 0]
 
     return goal_angles
@@ -197,44 +272,46 @@ def compute_ik(goal_poses, chain_end_effector_name):
 def get_velocities_r(goal_angles, current_angles):  # PI-controller
 
     global I_r
-    errors = []
+    global errors_r
+    errors_r =[]
     current_velocities = []
 
     for i in range(7):
-        errors.append(goal_angles[i] - current_angles[i])
-        current_velocities.append(Kp * errors[i] + I_r[i])
+        errors_r.append(goal_angles[i] - current_angles[i])
+        current_velocities.append(Kp * errors_r[i] + I_r[i])
 
         # Update integral part
-        I_r[i] = I_r[i] + Ki * errors[i]
+        I_r[i] = I_r[i] + Ki * errors_r[i]
 
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
 
     print("current errors for right arm are ")
-    print(errors)
+    print(errors_r)
     return current_velocities
 
 
 def get_velocities_l(goal_angles, current_angles):  # PI-controller
 
     global I_l
-    errors = []
+    global errors_l
+    errors_l = []
     current_velocities = []
 
     for i in range(7):
-        errors.append(goal_angles[i] - current_angles[i])
-        current_velocities.append(Kp * errors[i] + I_l[i])
+        errors_l.append(goal_angles[i] - current_angles[i])
+        current_velocities.append(Kp * errors_l[i] + I_l[i])
 
         # Update integral part
-        I_l[i] = I_l[i] + Ki * errors[i]
+        I_l[i] = I_l[i] + Ki * errors_l[i]
 
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
 
     print("current errors for left arm are ")
-    print(errors)
+    print(errors_l)
     return current_velocities
 
 
@@ -243,6 +320,7 @@ if __name__ == '__main__':
     # Get inputs and compute inverse kinematics
     rospy.init_node('control_node', anonymous=True)
     goal_poses_r=get_input_r()
+    print(goal_poses_r)
     goal_poses_l=get_input_l()
     goal_angle_r=compute_ik(goal_poses_r,"gripper_r_base")
     goal_angle_l=compute_ik(goal_poses_l,"gripper_l_base")
