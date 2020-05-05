@@ -175,9 +175,9 @@ int main (int argc, char ** argv)
 
       // Pref_dot = Vr = - Kr * (Pref - Prd)
       // twist_ref.vel = - Kp*(pose_ref.p  - desired_position_r1);  
-      twist_ref.vel.data[0] = Kp * (pose_ref.p.data[0] - desired_position_r1.data[0]);
-      twist_ref.vel.data[1] = Kp * (pose_ref.p.data[1] - desired_position_r1.data[1]);
-      twist_ref.vel.data[2] = Kp * (pose_ref.p.data[2] - desired_position_r1.data[2]);       
+      twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0] - desired_position_r1.data[0]);
+      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1] - desired_position_r1.data[1]);
+      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2] - desired_position_r1.data[2]);       
 
       ROS_INFO_STREAM("1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);
@@ -202,9 +202,12 @@ int main (int argc, char ** argv)
       // KDL Manager uses Eigen, a template library for matrices with which we can invert the jacobian.
       // Extract Eigenmatrix from jacobian for easier computations(KDL::Jacobian only allows for a maximum of 6 rows which is problematic when computing transpose)
       Eigen::MatrixXd matrix_r = jacobian_r.data;
-      matrix_r = matrix_r.block(0,0,6,7);
       Eigen::MatrixXd matrix_l = jacobian_l.data;
-      matrix_l = matrix_l.block(0,0,6,7);
+      //Yiannis ville att sista kolumnen skulle vara nollställd ty interferens
+      for(int i = 0 ; i<7; i++){
+        matrix_r(i,7) = 0;
+        matrix_l(i,7) = 0;
+      }
 
       ROS_INFO_STREAM("2.0 matrix_r is:");
       ROS_INFO_STREAM(matrix_r);
@@ -259,10 +262,10 @@ int main (int argc, char ** argv)
       // Calculate q_dot_ref = J+ * p_dot_ref
       // 16x3 * 3x1 => 16x1
       
-      // Eigen::Vector3d ref_vel(twist_ref.vel.data[0],twist_ref.vel.data[1],twist_ref.vel.data[2]);
+      Eigen::Vector3d ref_vel(twist_ref.vel.data[0],twist_ref.vel.data[1],twist_ref.vel.data[2]);
       
       // TEST: ref_vel = p_dot_r - p_dot_l
-      Eigen::Vector3d ref_vel(twist_r.vel.data[0] - twist_l.vel.data[0], twist_r.vel.data[1] - twist_l.vel.data[1],  twist_r.vel.data[2] - twist_l.vel.data[2]);
+      // Eigen::Vector3d ref_vel(twist_r.vel.data[0] - twist_l.vel.data[0], twist_r.vel.data[1] - twist_l.vel.data[1],  twist_r.vel.data[2] - twist_l.vel.data[2]);
 
       q_dot_ref.data = matrix_inv_ref * ref_vel; // q_dot_ref blir 16 rader lång? 
       q_dot_ref.data = q_dot_ref.data.tail(8); // vi tar de sista 8 raderna från q_dot_ref
