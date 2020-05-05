@@ -123,9 +123,9 @@ int main (int argc, char ** argv)
   // desired_position_r1 = getDesiredPosition_r1();
   KDL::Vector desired_position_r1;
 
-  desired_position_r1.data[0] = 0.288638;
+  desired_position_r1.data[0] = 0.488638;
   desired_position_r1.data[1] = -0.128583;
-  desired_position_r1.data[2] = 0.478045;
+  desired_position_r1.data[2] = 0.178045;
   // desired_position_l1 = getDesiredPosition_l1();
 
   // desired_position_r2 = getDesiredPosition_r2();
@@ -150,13 +150,13 @@ int main (int argc, char ** argv)
       // Calculate Errors
       error_r = pose_r.p - desired_position_r1 ;
       error_l = pose_l.p - desired_position_r1 ;
-      error_ref = pose_r.p - pose_l.p;
+      // error_ref = pose_r.p - pose_l.p;
 
 
-      twist_r.vel = - Kp*error_r; //P prick
-      twist_l.vel = - Kp*error_l;  // Not used anymore
+      twist_r.vel = - Kp*error_r; // P dot
+      twist_l.vel = - Kp*error_l; // Not used anymore
 
-      //Pref = Pr - Pl
+      // Pref = Pr - Pl
       pose_ref = pose_r;
       pose_ref.p.operator-=(pose_l.p); 
 
@@ -175,9 +175,12 @@ int main (int argc, char ** argv)
 
       // Pref_dot = Vr = - Kr * (Pref - Prd)
       // twist_ref.vel = - Kp*(pose_ref.p  - desired_position_r1);  
-      twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0] - desired_position_r1.data[0]);
-      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1] - desired_position_r1.data[1]);
-      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2] - desired_position_r1.data[2]);       
+      twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0]);
+      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1]);
+      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);       
+      // twist_ref.vel.data[0] = pose_ref.p.data[0];
+      // twist_ref.vel.data[1] = pose_ref.p.data[1];
+      // twist_ref.vel.data[2] = pose_ref.p.data[2];   
 
       ROS_INFO_STREAM("1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);
@@ -203,6 +206,7 @@ int main (int argc, char ** argv)
       // Extract Eigenmatrix from jacobian for easier computations(KDL::Jacobian only allows for a maximum of 6 rows which is problematic when computing transpose)
       Eigen::MatrixXd matrix_r = jacobian_r.data;
       Eigen::MatrixXd matrix_l = jacobian_l.data;
+
       //Yiannis ville att sista kolumnen skulle vara nollställd ty interferens
       for(int i = 0 ; i<7; i++){
         matrix_r(i,7) = 0;
@@ -273,7 +277,7 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM("3.1 matrix_inv_ref is:");
       ROS_INFO_STREAM(matrix_inv_ref);
       ROS_INFO_STREAM("3.1 ref_vel is:");
-      ROS_INFO_STREAM(r_vel);
+      ROS_INFO_STREAM(ref_vel);
       ROS_INFO_STREAM("3.2 q_dot_ref is:");
       ROS_INFO_STREAM(q_dot_ref.data);
       ROS_INFO_STREAM("4");
