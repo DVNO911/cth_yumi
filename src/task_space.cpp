@@ -9,6 +9,7 @@
 
 sensor_msgs::JointState state; // The current state as recorded by the subscriber 
 float Kp = 1; 
+float Ko = 1;
 std::string chain_end_effector_name_r = "gripper_r_finger_l"; // Kept as global variables because it might be useful to use other frames as reference
 std::string chain_end_effector_name_l = "gripper_l_finger_r";
 
@@ -21,55 +22,6 @@ void stateCb(const sensor_msgs::JointState::ConstPtr &msg)
   state = *msg;
 }
 
-
-KDL::Vector getDesiredPosition_r1(){
-  KDL::Vector desired_position;
-  // TO DO: Parse from YAMLfile
-  desired_position.x(0.288638);
-  desired_position.y(-0.328583);
-  desired_position.z(0.478045);  
-  return desired_position;
-}
-
-  KDL::Vector getDesiredPosition_r2(){
-  KDL::Vector desired_position;
-  desired_position.x(0.288638);
-  desired_position.y(-0.228583);
-  desired_position.z(0.278045);
-return desired_position;
-  }
-
-KDL::Vector getDesiredPosition_r3(){
-  KDL::Vector desired_position;
-  desired_position.x(0.288638);
-  desired_position.y(-0.328583);
-  desired_position.z(0.378045);
-  return desired_position;
-}
-
-KDL::Vector getDesiredPosition_l1(){
-  KDL::Vector desired_position;
-  // TO DO: Parse from YAMLfile
-  desired_position.x(0.288638);
-  desired_position.y(0.328583);
-  desired_position.z(0.378045);
-  return desired_position;
-}
-KDL::Vector getDesiredPosition_l2(){
-  KDL::Vector desired_position;
-  desired_position.x(0.288638);
-  desired_position.y(0.128583);
-  desired_position.z(0.478045);
-  return desired_position;
-}
-
-KDL::Vector getDesiredPosition_l3(){
-  KDL::Vector desired_position;
-  desired_position.x(0.288638);
-  desired_position.y(0.328583);
-  desired_position.z(0.378045);
-  return desired_position;
-}
 
 int main (int argc, char ** argv)
 {
@@ -99,8 +51,6 @@ int main (int argc, char ** argv)
                            // MISSING: GRIPPER PUBLISHERS
                           };
 
-
-
   // Initialize a KDL manager on the robot's left arm
   generic_control_toolbox::KDLManager manager("yumi_base_link", nh);  
   manager.initializeArm(chain_end_effector_name_r);
@@ -108,7 +58,7 @@ int main (int argc, char ** argv)
 
   KDL::Frame pose_r, pose_l, pose_ref;
   // KDL::Vector desired_position_r1, desired_position_l1, desired_position_r2, desired_position_l2, desired_position_r3, desired_position_l3;
-  KDL::Vector error_r, error_l, error_ref;
+  KDL::Vector vel_error_r, vel_error_l, rot_error_r, rot_error_ref; //vel_error_ref missing?
   KDL::JntArray q_dot_r(7), q_dot_l(7), q_dot_ref(7);
   KDL::Twist twist_r = KDL::Twist::Zero();
   KDL::Twist twist_l = KDL::Twist::Zero();
@@ -120,21 +70,25 @@ int main (int argc, char ** argv)
 
 
   // Parse goal poses
-  // desired_position_r1 = getDesiredPosition_r1();
   KDL::Vector desired_position_r1;
-
   desired_position_r1.data[0] = 0.488638;
   desired_position_r1.data[1] = -0.128583;
   desired_position_r1.data[2] = 0.178045;
-  // desired_position_l1 = getDesiredPosition_l1();
 
-  // desired_position_r2 = getDesiredPosition_r2();
-  // desired_position_l2 = getDesiredPosition_l2();
+  // KDL::Vector desired_rotation_r1;
+  // desired_rotation_r1.data[0] = 0.3;
+  // desired_rotation_r1.data[1] = 0.3;
+  // desired_rotation_r1.data[2] = -0.2;
 
-  // desired_position_r3 = getDesiredPosition_r3();
-  // desired_position_l3 = getDesiredPosition_l3();
-
-
+  // Construct an object of type KDL::Rotation that can be given to object KDL::Frame
+  // This way you can input euler angles instead of quaternions
+  KDL::Rotation desired_rot_r1;
+  //desired_rot_r1 = KDL::Rotation::EulerZYX(0.2, 0.2, 0.2); 
+  desired_rot_r1 = KDL::Rotation::Quaternion(-0.5, 0.5, -0.5, 0.5); 
+  //desired_rot_r1 = KDL::Rotation::Quaternion(0.715402, -0.201775, 0.634136, -0.212975); 
+  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.831,  0.363,  0.384, -0.173); FUNKAR DÅLIGT
+  //desired_rot_r1 = KDL::Rotation::Quaternion( 0.454,  0.203,  0.354, -0.792); FUNKAR DÅLIGT
+  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.5, -0.846,  0.129,  0.129); FUNKAR DÅLIGT
   // LOOP
   while (ros::ok())
   {
@@ -148,27 +102,61 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM("getEefPose computed");
 
       // Calculate Errors
-      error_r = pose_r.p - desired_position_r1 ;
-      error_l = pose_l.p - desired_position_r1 ;
-      // error_ref = pose_r.p - pose_l.p;
+      vel_error_r = pose_r.p - desired_position_r1 ;
+      vel_error_l = pose_l.p - desired_position_r1 ;
 
 
-      twist_r.vel = - Kp*error_r; // P dot
-      twist_l.vel = - Kp*error_l; // Not used anymore
+      double epsilond_x_r, epsilond_y_r, epsilond_z_r, etad_r; //destination
+      double epsilone_x_r, epsilone_y_r, epsilone_z_r, etae_r; //current right
+      double epsilone_x_l, epsilone_y_l, epsilone_z_l, etae_l; //current left
+
+      desired_rot_r1.GetQuaternion(etad_r, epsilond_x_r, epsilond_y_r, epsilond_z_r); 
+      pose_r.M.GetQuaternion(etae_r, epsilone_x_r, epsilone_y_r, epsilone_z_r);
+      pose_l.M.GetQuaternion(etae_l, epsilone_x_l, epsilone_y_l, epsilone_z_l);
+
+      // rot_error_r[0] = etae_r * epsilond_x_r - etad_r * epsilone_x_r - epsilond_x_r * epsilone_x_r;
+      //rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - epsilond_y_r * epsilone_y_r;
+      // rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - epsilond_z_r * epsilone_z_r;
+
+      //nytt försök där sista termen är kryssprodukt
+      rot_error_r[0] = etae_r * epsilond_x_r - etad_r * epsilone_x_r - (epsilond_y_r * epsilone_z_r - epsilond_z_r * epsilone_y_r);
+      rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - -1 * (epsilond_x_r * epsilone_z_r - epsilond_z_r * epsilone_x_r);
+      rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - (epsilond_x_r * epsilone_y_r - epsilond_y_r * epsilone_x_r);
+
+      rot_error_ref[0] = etae_l * epsilone_x_r - etae_r * epsilone_x_l - (epsilone_y_r * epsilone_z_l - epsilone_z_r * epsilone_y_l);
+      rot_error_ref[1] = etae_l * epsilone_y_r - etae_r * epsilone_y_l - -1 * (epsilone_x_r * epsilone_z_l - epsilone_z_r * epsilone_x_l);
+      rot_error_ref[2] = etae_l * epsilone_z_r - etae_r * epsilone_z_l - (epsilone_x_r * epsilone_y_l - epsilone_y_r * epsilone_x_l);
+
+      ROS_INFO_STREAM("\nrot_error_r:");
+      ROS_INFO_STREAM(rot_error_r[0]);
+      ROS_INFO_STREAM(rot_error_r[1]);
+      ROS_INFO_STREAM(rot_error_r[2]);
+      ROS_INFO_STREAM("rot_error_ref:");
+      ROS_INFO_STREAM(rot_error_ref[0]);
+      ROS_INFO_STREAM(rot_error_ref[1]);
+      ROS_INFO_STREAM(rot_error_ref[2]);
+
+      twist_r.vel = - Kp*vel_error_r; // P dot
+      twist_l.vel = - Kp*vel_error_l; // Not used anymore
+
+      twist_r.rot = - Ko*rot_error_r; 
+      // twist_l.rot = - Ko*rot_error_l;
+
+
 
       // Pref = Pr - Pl
       pose_ref = pose_r;
       pose_ref.p.operator-=(pose_l.p); 
 
-      ROS_INFO_STREAM("1 pose_r:");
+      ROS_INFO_STREAM("\n1 pose_r:");
       ROS_INFO_STREAM(pose_r.p[0]);
       ROS_INFO_STREAM(pose_r.p[1]);
       ROS_INFO_STREAM(pose_r.p[2]);
-      ROS_INFO_STREAM("1.2 pose_l:");
+      ROS_INFO_STREAM("\n1.2 pose_l:");
       ROS_INFO_STREAM(pose_l.p[0]);
       ROS_INFO_STREAM(pose_l.p[1]);
       ROS_INFO_STREAM(pose_l.p[2]);
-      ROS_INFO_STREAM("1.3 pose_ref:");
+      ROS_INFO_STREAM("\n1.3 pose_ref:");
       ROS_INFO_STREAM(pose_ref.p[0]);
       ROS_INFO_STREAM(pose_ref.p[1]);
       ROS_INFO_STREAM(pose_ref.p[2]);
@@ -177,21 +165,31 @@ int main (int argc, char ** argv)
       // twist_ref.vel = - Kp*(pose_ref.p  - desired_position_r1);  
       twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0]);
       twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1]);
-      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);       
+      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);    
+
+      twist_ref.rot.data[0] = - Ko * (rot_error_ref[0]);
+      twist_ref.rot.data[1] = - Ko * (rot_error_ref[1]);
+      twist_ref.rot.data[2] = - Ko * (rot_error_ref[2]);   
       // twist_ref.vel.data[0] = pose_ref.p.data[0];
       // twist_ref.vel.data[1] = pose_ref.p.data[1];
       // twist_ref.vel.data[2] = pose_ref.p.data[2];   
 
-      ROS_INFO_STREAM("1.4 twist_r:");
+      ROS_INFO_STREAM("\n1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);
       ROS_INFO_STREAM(twist_r.vel.data[1]);
       ROS_INFO_STREAM(twist_r.vel.data[2]);
-      ROS_INFO_STREAM("1.5");
+      ROS_INFO_STREAM(twist_r.rot.data[0]);
+      ROS_INFO_STREAM(twist_r.rot.data[1]);
+      ROS_INFO_STREAM(twist_r.rot.data[2]);
+      ROS_INFO_STREAM("\n1.5\n");
       ROS_INFO_STREAM("1.6 twist_ref:");
       ROS_INFO_STREAM(twist_ref.vel.data[0]);
       ROS_INFO_STREAM(twist_ref.vel.data[1]);
       ROS_INFO_STREAM(twist_ref.vel.data[2]);
-      ROS_INFO_STREAM("1.7");
+      ROS_INFO_STREAM(twist_ref.rot.data[0]);
+      ROS_INFO_STREAM(twist_ref.rot.data[1]);
+      ROS_INFO_STREAM(twist_ref.rot.data[2]);
+      ROS_INFO_STREAM("\n1.7 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
       // Compute jacobian_r, jacobian_l
       manager.getJacobian(chain_end_effector_name_r, state, jacobian_r);
@@ -252,32 +250,45 @@ int main (int argc, char ** argv)
 
 
       //q_dot_r = jacobian_inv_r * twist_r_vel
-      // 8x3 * 3x1 => 8x1
-      Eigen::Vector3d r_vel( twist_r.vel.data[0],  twist_r.vel.data[1],  twist_r.vel.data[2]);
-      q_dot_r.data = matrix_inv_r * r_vel;
+      // 8x6 * 6x1 => 8x1
+      Eigen::VectorXd r_x(6);
+      r_x[0] = twist_r.vel.data[0];
+      r_x[1] = twist_r.vel.data[1];
+      r_x[2] = twist_r.vel.data[2];
+      r_x[3] = twist_r.rot.data[0];
+      r_x[4] = twist_r.rot.data[1];
+      r_x[5] = twist_r.rot.data[2];
+     
+      q_dot_r.data = matrix_inv_r * r_x;
 
       ROS_INFO_STREAM("3.1 jmatrix_inv_r is:");
       ROS_INFO_STREAM(matrix_inv_r);
-      ROS_INFO_STREAM("3.1 r_vel is:");
-      ROS_INFO_STREAM(r_vel);
+      ROS_INFO_STREAM("3.1 r_ is:");
+      ROS_INFO_STREAM(r_x);
       ROS_INFO_STREAM("3.1 q_dot_r is:");
       ROS_INFO_STREAM(q_dot_r.data);
       
       // Calculate q_dot_ref = J+ * p_dot_ref
-      // 16x3 * 3x1 => 16x1
+      // 16x6 * 6x1 => 16x1
       
-      Eigen::Vector3d ref_vel(twist_ref.vel.data[0],twist_ref.vel.data[1],twist_ref.vel.data[2]);
-      
+      //Eigen::Array ref_x(twist_ref.vel.data[0],twist_ref.vel.data[1],twist_ref.vel.data[2], twist_ref.rot.data[0],  twist_ref.rot.data[1],  twist_ref.rot.data[2]); //What should this be called?
+      Eigen::VectorXd ref_x(6);
+      ref_x[0] = twist_ref.vel.data[0];
+      ref_x[1] = twist_ref.vel.data[1];
+      ref_x[2] = twist_ref.vel.data[2];
+      ref_x[3] = twist_ref.rot.data[0];
+      ref_x[4] = twist_ref.rot.data[1];
+      ref_x[5] = twist_ref.rot.data[2];
       // TEST: ref_vel = p_dot_r - p_dot_l
       // Eigen::Vector3d ref_vel(twist_r.vel.data[0] - twist_l.vel.data[0], twist_r.vel.data[1] - twist_l.vel.data[1],  twist_r.vel.data[2] - twist_l.vel.data[2]);
 
-      q_dot_ref.data = matrix_inv_ref * ref_vel; // q_dot_ref blir 16 rader lång? 
+      q_dot_ref.data = matrix_inv_ref * ref_x; // q_dot_ref blir 16 rader lång? 
       q_dot_ref.data = q_dot_ref.data.tail(8); // vi tar de sista 8 raderna från q_dot_ref
 
       ROS_INFO_STREAM("3.1 matrix_inv_ref is:");
       ROS_INFO_STREAM(matrix_inv_ref);
-      ROS_INFO_STREAM("3.1 ref_vel is:");
-      ROS_INFO_STREAM(ref_vel);
+      ROS_INFO_STREAM("3.1 ref_x is:");
+      ROS_INFO_STREAM(ref_x);
       ROS_INFO_STREAM("3.2 q_dot_ref is:");
       ROS_INFO_STREAM(q_dot_ref.data);
       ROS_INFO_STREAM("4");
