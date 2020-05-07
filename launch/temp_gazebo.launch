@@ -1,0 +1,6 @@
+<launch>
+<include file="$(find cth_yumi)/launch/vel_gazebo.launch"/>
+<include file="$(find robot_kinematic_services)/launch/robot_kinematic_services.launch"/>
+
+<rosparam file="$(find cth_yumi)/config/testpositions.yaml" />
+</launch>

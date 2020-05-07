@@ -10,8 +10,9 @@
 sensor_msgs::JointState state; // The current state as recorded by the subscriber 
 float Kp = 1; 
 float Ko = 1;
-std::string chain_end_effector_name_r = "gripper_r_finger_l"; // Kept as global variables because it might be useful to use other frames as reference
+std::string chain_end_effector_name_r = "gripper_r_finger_r"; // Kept as global variables because it might be useful to use other frames as reference
 std::string chain_end_effector_name_l = "gripper_l_finger_r";
+
 
 int counter = 0;
 int pose_counter = 0;
@@ -57,7 +58,6 @@ int main (int argc, char ** argv)
   manager.initializeArm(chain_end_effector_name_l);
 
   KDL::Frame pose_r, pose_l, pose_ref;
-  // KDL::Vector desired_position_r1, desired_position_l1, desired_position_r2, desired_position_l2, desired_position_r3, desired_position_l3;
   KDL::Vector vel_error_r, vel_error_l, rot_error_r, rot_error_ref; //vel_error_ref missing?
   KDL::JntArray q_dot_r(7), q_dot_l(7), q_dot_ref(7);
   KDL::Twist twist_r = KDL::Twist::Zero();
@@ -75,20 +75,25 @@ int main (int argc, char ** argv)
   desired_position_r1.data[1] = -0.128583;
   desired_position_r1.data[2] = 0.178045;
 
-  // KDL::Vector desired_rotation_r1;
-  // desired_rotation_r1.data[0] = 0.3;
-  // desired_rotation_r1.data[1] = 0.3;
-  // desired_rotation_r1.data[2] = -0.2;
 
   // Construct an object of type KDL::Rotation that can be given to object KDL::Frame
   // This way you can input euler angles instead of quaternions
   KDL::Rotation desired_rot_r1;
+  KDL::Rotation desired_rot_l1;
   //desired_rot_r1 = KDL::Rotation::EulerZYX(0.2, 0.2, 0.2); 
   desired_rot_r1 = KDL::Rotation::Quaternion(-0.5, 0.5, -0.5, 0.5); 
+  desired_rot_l1 = KDL::Rotation::Quaternion(-0.5, 0.5, -0.5, 0.5); 
+  desired_rot_r1 = KDL::Rotation::Quaternion(0.707, 0, 0.707, 0); 
+
+  desired_rot_l1 = KDL::Rotation::Quaternion(0.707, 0, 0.707, 0); 
+  //desired_rot_r1 = KDL::Rotation::Quaternion(0.7071068 , 0, 0, 0.7071068 ); 
+  
   //desired_rot_r1 = KDL::Rotation::Quaternion(0.715402, -0.201775, 0.634136, -0.212975); 
-  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.831,  0.363,  0.384, -0.173); FUNKAR DÅLIGT
-  //desired_rot_r1 = KDL::Rotation::Quaternion( 0.454,  0.203,  0.354, -0.792); FUNKAR DÅLIGT
-  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.5, -0.846,  0.129,  0.129); FUNKAR DÅLIGT
+  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.831,  0.363,  0.384, -0.173); FUNKAR EJ
+  //desired_rot_r1 = KDL::Rotation::Quaternion( 0.454,  0.203,  0.354, -0.792); FUNKAR EJ
+  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.5, -0.846,  0.129,  0.129); FUNKAR EJ
+  //desired_rot_r1 = KDL::Rotation::Quaternion(-0.14052, 0.74946, -0.15362, 0.62846); 
+
   // LOOP
   while (ros::ok())
   {
@@ -96,9 +101,8 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM("~ ~ ~ NEW LOOP ~ ~ ~");
     // Get the end-effector pose as a KDL::Frame.
     // When code runs its gonna complain a couple times that it hasnt found a chain joint state, this is because the subscriber hasnt recieved a message yet
-    if (manager.getEefPose(chain_end_effector_name_r, state, pose_r)) 
+    if (manager.getEefPose(chain_end_effector_name_r, state, pose_r) &&  manager.getEefPose(chain_end_effector_name_l, state, pose_l)) 
     {
-      manager.getEefPose(chain_end_effector_name_l, state, pose_l);
       ROS_INFO_STREAM("getEefPose computed");
 
       // Calculate Errors
@@ -106,11 +110,13 @@ int main (int argc, char ** argv)
       vel_error_l = pose_l.p - desired_position_r1 ;
 
 
-      double epsilond_x_r, epsilond_y_r, epsilond_z_r, etad_r; //destination
-      double epsilone_x_r, epsilone_y_r, epsilone_z_r, etae_r; //current right
-      double epsilone_x_l, epsilone_y_l, epsilone_z_l, etae_l; //current left
+      double epsilond_x_r, epsilond_y_r, epsilond_z_r, etad_r; //destination_r
+      double epsilond_x_l, epsilond_y_l, epsilond_z_l, etad_l; //destination_l
+      double epsilone_x_r, epsilone_y_r, epsilone_z_r, etae_r; //current_r
+      double epsilone_x_l, epsilone_y_l, epsilone_z_l, etae_l; //current_l
 
       desired_rot_r1.GetQuaternion(etad_r, epsilond_x_r, epsilond_y_r, epsilond_z_r); 
+      desired_rot_l1.GetQuaternion(etad_l, epsilond_x_l, epsilond_y_l, epsilond_z_l); 
       pose_r.M.GetQuaternion(etae_r, epsilone_x_r, epsilone_y_r, epsilone_z_r);
       pose_l.M.GetQuaternion(etae_l, epsilone_x_l, epsilone_y_l, epsilone_z_l);
 
@@ -123,9 +129,15 @@ int main (int argc, char ** argv)
       rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - -1 * (epsilond_x_r * epsilone_z_r - epsilond_z_r * epsilone_x_r);
       rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - (epsilond_x_r * epsilone_y_r - epsilond_y_r * epsilone_x_r);
 
+      // SLAVE ORIENTATION
       rot_error_ref[0] = etae_l * epsilone_x_r - etae_r * epsilone_x_l - (epsilone_y_r * epsilone_z_l - epsilone_z_r * epsilone_y_l);
       rot_error_ref[1] = etae_l * epsilone_y_r - etae_r * epsilone_y_l - -1 * (epsilone_x_r * epsilone_z_l - epsilone_z_r * epsilone_x_l);
       rot_error_ref[2] = etae_l * epsilone_z_r - etae_r * epsilone_z_l - (epsilone_x_r * epsilone_y_l - epsilone_y_r * epsilone_x_l);
+
+      // slave orientation funkar piss, vi testar vanlig på left arm
+      // rot_error_ref[0] = etae_l * epsilond_x_l - etad_l * epsilone_x_l - (epsilond_y_l * epsilone_z_l - epsilond_z_l * epsilone_y_l);
+      // rot_error_ref[1] = etae_l * epsilond_y_l - etad_l * epsilone_y_l - -1 * (epsilond_x_l * epsilone_z_l - epsilond_z_l* epsilone_x_l);
+      // rot_error_ref[2] = etae_l * epsilond_z_l - etad_l * epsilone_z_l - (epsilond_x_l * epsilone_y_l - epsilond_y_l * epsilone_x_l);
 
       ROS_INFO_STREAM("\nrot_error_r:");
       ROS_INFO_STREAM(rot_error_r[0]);
@@ -140,6 +152,8 @@ int main (int argc, char ** argv)
       twist_l.vel = - Kp*vel_error_l; // Not used anymore
 
       twist_r.rot = - Ko*rot_error_r; 
+
+      
       // twist_l.rot = - Ko*rot_error_l;
 
 
@@ -164,15 +178,12 @@ int main (int argc, char ** argv)
       // Pref_dot = Vr = - Kr * (Pref - Prd)
       // twist_ref.vel = - Kp*(pose_ref.p  - desired_position_r1);  
       twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0]);
-      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1]);
+      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1] + 0.2); // +0.2 offset
       twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);    
-
-      twist_ref.rot.data[0] = - Ko * (rot_error_ref[0]);
-      twist_ref.rot.data[1] = - Ko * (rot_error_ref[1]);
-      twist_ref.rot.data[2] = - Ko * (rot_error_ref[2]);   
-      // twist_ref.vel.data[0] = pose_ref.p.data[0];
-      // twist_ref.vel.data[1] = pose_ref.p.data[1];
-      // twist_ref.vel.data[2] = pose_ref.p.data[2];   
+      twist_ref.rot = - Ko*rot_error_ref; 
+      //twist_ref.rot.data[0] = - Ko * (rot_error_ref[0]);
+      //twist_ref.rot.data[1] = - Ko * (rot_error_ref[1]);
+      //twist_ref.rot.data[2] = - Ko * (rot_error_ref[2]);   
 
       ROS_INFO_STREAM("\n1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);
@@ -270,8 +281,6 @@ int main (int argc, char ** argv)
       
       // Calculate q_dot_ref = J+ * p_dot_ref
       // 16x6 * 6x1 => 16x1
-      
-      //Eigen::Array ref_x(twist_ref.vel.data[0],twist_ref.vel.data[1],twist_ref.vel.data[2], twist_ref.rot.data[0],  twist_ref.rot.data[1],  twist_ref.rot.data[2]); //What should this be called?
       Eigen::VectorXd ref_x(6);
       ref_x[0] = twist_ref.vel.data[0];
       ref_x[1] = twist_ref.vel.data[1];
@@ -279,9 +288,9 @@ int main (int argc, char ** argv)
       ref_x[3] = twist_ref.rot.data[0];
       ref_x[4] = twist_ref.rot.data[1];
       ref_x[5] = twist_ref.rot.data[2];
-      // TEST: ref_vel = p_dot_r - p_dot_l
-      // Eigen::Vector3d ref_vel(twist_r.vel.data[0] - twist_l.vel.data[0], twist_r.vel.data[1] - twist_l.vel.data[1],  twist_r.vel.data[2] - twist_l.vel.data[2]);
-
+      //ref_x[3] = 0;
+      //ref_x[4] = 0;
+      //ref_x[5] = 0;
       q_dot_ref.data = matrix_inv_ref * ref_x; // q_dot_ref blir 16 rader lång? 
       q_dot_ref.data = q_dot_ref.data.tail(8); // vi tar de sista 8 raderna från q_dot_ref
 
