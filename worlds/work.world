@@ -9,7 +9,8 @@
     </include>
 
     <model name='unit_box'>
-      <pose frame=''>0.35 0 0 0 -0 0</pose>
+      <pose frame=''>0.5 0 0 0 -0 0</pose>
+      <static>true</static>
       <link name='link'>
         <inertial>
           <mass>1</mass>
@@ -25,7 +26,7 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>1 1 0.05</size>
+              <size>1 1 0.1</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -45,7 +46,7 @@
         <visual name='visual'>
           <geometry>
             <box>
-              <size>1 1 0.075</size>
+              <size>1 1 0.1</size>
             </box>
           </geometry>
           <material>
@@ -60,8 +61,8 @@
         <kinematic>0</kinematic>
       </link>
     </model>
-  <model name="my_model">
-    <pose>0.489 0.308982 0.09903 0 0 0</pose>
+  <model name="my_model_l">
+    <pose>0.48999 0.288982 0.1 0 0 0</pose>
     <static>false</static>
     <link name="link">
       <inertial>
@@ -81,6 +82,54 @@
           <box>
             <size>0.02 0.02 0.1</size>
           </box>
+	<surface>
+		<friction>
+         	<ode>
+           		<mu>0.1</mu>
+           		<mu2>0.1</mu2>
+        	</ode>
+        	</friction>
+	</surface>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.1</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+  <model name="my_model_r">
+    <pose>0.48999 -0.288982 0.1 0 0 0</pose>
+    <static>false</static>
+    <link name="link">
+      <inertial>
+        <mass>0.1</mass>
+        <inertia> <!-- inertias are tricky to compute -->
+          <!-- http://gazebosim.org/tutorials?tut=inertia&cat=build_robot -->
+          <ixx>0.083</ixx>       <!-- for a box: ixx = 0.083 * mass * (y*y + z*z) -->
+          <ixy>0.0</ixy>         <!-- for a box: ixy = 0 -->
+          <ixz>0.0</ixz>         <!-- for a box: ixz = 0 -->
+          <iyy>0.083</iyy>       <!-- for a box: iyy = 0.083 * mass * (x*x + z*z) -->
+          <iyz>0.0</iyz>         <!-- for a box: iyz = 0 -->
+          <izz>0.083</izz>       <!-- for a box: izz = 0.083 * mass * (x*x + y*y) -->
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.1</size>
+          </box>
+	<surface>
+		<friction>
+         	<ode>
+           		<mu>0.1</mu>
+           		<mu2>0.1</mu2>
+        	</ode>
+        	</friction>
+	</surface>
         </geometry>
       </collision>
       <visual name="visual">
