@@ -17,7 +17,10 @@ You can install them with the following commands
 ``` sudo apt-get install ros-melodic-industrial-core
 sudo apt-get install ros-melodic-abb 
 ``` 
-
+You also need hector_xacro_tools. run
+``` 
+sudo apt-get install ros-melodic-hector-xacro-tools
+``` 
 
 Then, use the command ```rospack list-names``` to check that the following packages are installed:
 
