@@ -86,12 +86,12 @@ cd src/
 rm -rf yumi
 git clone https://github.com/EENX15-20-11-COBOTS/yumi.git
 cd yumi
-git checkout origin/<branch_name>
+git checkout origin/$ROS_DISTRO 
 cd $YUMI_WS
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 
-Build again. You might run into some additional problems but if you manage to build the package then the worst is over :)
+Catkin should successfully build now. You might run into some additional problems but if you manage to build the package then the worst is over :)
 
 
 ## Contributing
