@@ -19,7 +19,7 @@ x = 0
 l = 7  # lower value of left posestamp. Also the highest of the right.
 u = 13  # Upper value of left posestamp plus 1 because of in range funktion.
 # Effort to send to grippers + is close - is open
-close = 0.3
+close = 2
 open = -20
 gripper_l_cmd_msg = close
 gripper_r_cmd_msg = close
@@ -129,13 +129,14 @@ def run(goal_angles_r, goal_angles_l):
                     publishers[i + 7].publish(velocities_l[i])
                     print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
                 while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
-                    y += 10
+                    y += 0.1
+                    
             y = 0
             while y < 10000:
                 print("~~~NEW LOOP~~~")
                 print("names are")
                 print(subscriber.current_state.name)
-                print("2")
+                print("3")
                 # Separate into DX/LX
                 current_angles_r = []
                 current_angles_l = []
@@ -156,17 +157,19 @@ def run(goal_angles_r, goal_angles_l):
                     publishers[i + 7].publish(velocities_l[i])
                     print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
                 while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
-                    y += 10
+                    y += 2
             # Grab the object
             publishers[14].publish(close)
             publishers[15].publish(close)
             time.sleep(5)
             y = 0
+
+
             while y < 2000:
                 print("~~~NEW LOOP~~~")
                 print("names are")
                 print(subscriber.current_state.name)
-                print("2")
+                print(y)
                 # Separate into DX/LX
                 current_angles_r = []
                 current_angles_l = []
@@ -194,7 +197,7 @@ def run(goal_angles_r, goal_angles_l):
                 print("~~~NEW LOOP~~~")
                 print("names are")
                 print(subscriber.current_state.name)
-                print("2")
+                print("5")
                 # Separate into DX/LX
                 current_angles_r = []
                 current_angles_l = []
@@ -222,7 +225,7 @@ def run(goal_angles_r, goal_angles_l):
                 print("~~~NEW LOOP~~~")
                 print("names are")
                 print(subscriber.current_state.name)
-                print("2")
+                print("6")
                 # Separate into DX/LX
                 current_angles_r = []
                 current_angles_l = []
@@ -242,7 +245,7 @@ def run(goal_angles_r, goal_angles_l):
                 for i in range(7):
                     publishers[i + 7].publish(velocities_l[i])
                     print("published " + str(velocities_l[i]) + " onto " + str(publishers[i + 7].name))
-                while abs(np.sum(errors_r)) < 0.01 and abs(np.sum(errors_l)) < 0.01 and y < 10000:
+                while abs(np.sum(errors_r)) < 0.03 and abs(np.sum(errors_l)) < 0.03 and y < 10000:
                     y += 1
 
             y = 0
