@@ -17,7 +17,10 @@ You can install them with the following commands
 ``` sudo apt-get install ros-melodic-industrial-core
 sudo apt-get install ros-melodic-abb 
 ``` 
-
+You also need hector_xacro_tools. run
+``` 
+sudo apt-get install ros-melodic-hector-xacro-tools
+``` 
 
 Then, use the command ```rospack list-names``` to check that the following packages are installed:
 
@@ -86,12 +89,12 @@ cd src/
 rm -rf yumi
 git clone https://github.com/EENX15-20-11-COBOTS/yumi.git
 cd yumi
-git checkout origin/<branch_name>
+git checkout origin/$ROS_DISTRO 
 cd $YUMI_WS
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 
-Build again. You might run into some additional problems but if you manage to build the package then the worst is over :)
+Catkin should successfully build now. You might run into some additional problems but if you manage to build the package then the worst is over :)
 
 
 ## Contributing
