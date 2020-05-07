@@ -57,9 +57,9 @@ int main (int argc, char ** argv)
   manager.initializeArm(chain_end_effector_name_r);
   manager.initializeArm(chain_end_effector_name_l);
 
-  KDL::Frame pose_r, pose_l, pose_ref;
-  KDL::Vector vel_error_r, vel_error_l, rot_error_r, rot_error_ref; //vel_error_ref missing?
-  KDL::JntArray q_dot_r(7), q_dot_l(7), q_dot_ref(7);
+  KDL::Frame pose_r, pose_l;
+  KDL::Vector vel_error_r, vel_error_l, rot_error_r, rot_error_l; //vel_error_ref missing?
+  KDL::JntArray q_dot_r(7), q_dot_l(7);
   KDL::Twist twist_r = KDL::Twist::Zero();
   KDL::Twist twist_l = KDL::Twist::Zero();
   KDL::Twist twist_ref = KDL::Twist::Zero();
@@ -74,6 +74,11 @@ int main (int argc, char ** argv)
   desired_position_r1.data[0] = 0.488638;
   desired_position_r1.data[1] = -0.128583;
   desired_position_r1.data[2] = 0.178045;
+  
+  KDL::Vector desired_position_l1;
+  desired_position_l1.data[0] = 0.488638;
+  desired_position_l1.data[1] = -0.128583 + 0.2;
+  desired_position_l1.data[2] = 0.178045;
 
 
   // Construct an object of type KDL::Rotation that can be given to object KDL::Frame
@@ -107,7 +112,7 @@ int main (int argc, char ** argv)
 
       // Calculate Errors
       vel_error_r = pose_r.p - desired_position_r1 ;
-      vel_error_l = pose_l.p - desired_position_r1 ;
+      vel_error_l = pose_l.p - desired_position_l1 ;
 
 
       double epsilond_x_r, epsilond_y_r, epsilond_z_r, etad_r; //destination_r
@@ -129,38 +134,27 @@ int main (int argc, char ** argv)
       rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - -1 * (epsilond_x_r * epsilone_z_r - epsilond_z_r * epsilone_x_r);
       rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - (epsilond_x_r * epsilone_y_r - epsilond_y_r * epsilone_x_r);
 
-      // SLAVE ORIENTATION
-      rot_error_ref[0] = etae_l * epsilone_x_r - etae_r * epsilone_x_l - (epsilone_y_r * epsilone_z_l - epsilone_z_r * epsilone_y_l);
-      rot_error_ref[1] = etae_l * epsilone_y_r - etae_r * epsilone_y_l - -1 * (epsilone_x_r * epsilone_z_l - epsilone_z_r * epsilone_x_l);
-      rot_error_ref[2] = etae_l * epsilone_z_r - etae_r * epsilone_z_l - (epsilone_x_r * epsilone_y_l - epsilone_y_r * epsilone_x_l);
-
+     
       // slave orientation funkar piss, vi testar vanlig på left arm
-      // rot_error_ref[0] = etae_l * epsilond_x_l - etad_l * epsilone_x_l - (epsilond_y_l * epsilone_z_l - epsilond_z_l * epsilone_y_l);
-      // rot_error_ref[1] = etae_l * epsilond_y_l - etad_l * epsilone_y_l - -1 * (epsilond_x_l * epsilone_z_l - epsilond_z_l* epsilone_x_l);
-      // rot_error_ref[2] = etae_l * epsilond_z_l - etad_l * epsilone_z_l - (epsilond_x_l * epsilone_y_l - epsilond_y_l * epsilone_x_l);
-
+      rot_error_l[0] = etae_l * epsilond_x_l - etad_l * epsilone_x_l - (epsilond_y_l * epsilone_z_l - epsilond_z_l * epsilone_y_l);
+      rot_error_l[1] = etae_l * epsilond_y_l - etad_l * epsilone_y_l - -1 * (epsilond_x_l * epsilone_z_l - epsilond_z_l * epsilone_x_l);
+      rot_error_l[2] = etae_l * epsilond_z_l - etad_l * epsilone_z_l - (epsilond_x_l * epsilone_y_l - epsilond_y_l * epsilone_x_l);
       ROS_INFO_STREAM("\nrot_error_r:");
       ROS_INFO_STREAM(rot_error_r[0]);
       ROS_INFO_STREAM(rot_error_r[1]);
       ROS_INFO_STREAM(rot_error_r[2]);
-      ROS_INFO_STREAM("rot_error_ref:");
-      ROS_INFO_STREAM(rot_error_ref[0]);
-      ROS_INFO_STREAM(rot_error_ref[1]);
-      ROS_INFO_STREAM(rot_error_ref[2]);
+      ROS_INFO_STREAM("rot_error_l:");
+      ROS_INFO_STREAM(rot_error_l[0]);
+      ROS_INFO_STREAM(rot_error_l[1]);
+      ROS_INFO_STREAM(rot_error_l[2]);
 
       twist_r.vel = - Kp*vel_error_r; // P dot
       twist_l.vel = - Kp*vel_error_l; // Not used anymore
 
       twist_r.rot = - Ko*rot_error_r; 
-
+      twist_l.rot = - Ko*rot_error_l; 
       
-      // twist_l.rot = - Ko*rot_error_l;
-
-
-
       // Pref = Pr - Pl
-      pose_ref = pose_r;
-      pose_ref.p.operator-=(pose_l.p); 
 
       ROS_INFO_STREAM("\n1 pose_r:");
       ROS_INFO_STREAM(pose_r.p[0]);
@@ -170,20 +164,6 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM(pose_l.p[0]);
       ROS_INFO_STREAM(pose_l.p[1]);
       ROS_INFO_STREAM(pose_l.p[2]);
-      ROS_INFO_STREAM("\n1.3 pose_ref:");
-      ROS_INFO_STREAM(pose_ref.p[0]);
-      ROS_INFO_STREAM(pose_ref.p[1]);
-      ROS_INFO_STREAM(pose_ref.p[2]);
-
-      // Pref_dot = Vr = - Kr * (Pref - Prd)
-      // twist_ref.vel = - Kp*(pose_ref.p  - desired_position_r1);  
-      twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0]);
-      twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1] + 0.2); // +0.2 offset
-      twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);    
-      twist_ref.rot = - Ko*rot_error_ref; 
-      //twist_ref.rot.data[0] = - Ko * (rot_error_ref[0]);
-      //twist_ref.rot.data[1] = - Ko * (rot_error_ref[1]);
-      //twist_ref.rot.data[2] = - Ko * (rot_error_ref[2]);   
 
       ROS_INFO_STREAM("\n1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);
@@ -193,13 +173,13 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM(twist_r.rot.data[1]);
       ROS_INFO_STREAM(twist_r.rot.data[2]);
       ROS_INFO_STREAM("\n1.5\n");
-      ROS_INFO_STREAM("1.6 twist_ref:");
-      ROS_INFO_STREAM(twist_ref.vel.data[0]);
-      ROS_INFO_STREAM(twist_ref.vel.data[1]);
-      ROS_INFO_STREAM(twist_ref.vel.data[2]);
-      ROS_INFO_STREAM(twist_ref.rot.data[0]);
-      ROS_INFO_STREAM(twist_ref.rot.data[1]);
-      ROS_INFO_STREAM(twist_ref.rot.data[2]);
+      ROS_INFO_STREAM("1.6 twist_l:");
+      ROS_INFO_STREAM(twist_l.vel.data[0]);
+      ROS_INFO_STREAM(twist_l.vel.data[1]);
+      ROS_INFO_STREAM(twist_l.vel.data[2]);
+      ROS_INFO_STREAM(twist_l.rot.data[0]);
+      ROS_INFO_STREAM(twist_l.rot.data[1]);
+      ROS_INFO_STREAM(twist_l.rot.data[2]);
       ROS_INFO_STREAM("\n1.7 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
       // Compute jacobian_r, jacobian_l
@@ -239,26 +219,18 @@ int main (int argc, char ** argv)
       ROS_INFO_STREAM("2.3 matrix_inv_r is:");
       ROS_INFO_STREAM(matrix_inv_r);
 
-      // concatenate matrices to create reference jacobian size 6x16
-      // Jacobian_ref = [Jacobian_r, -Jacobian_l]
-      Eigen::MatrixXd matrix_ref(matrix_r.rows(), matrix_r.cols()+matrix_l.cols());
-      Eigen::MatrixXd matrix_l_negativ;
-      matrix_l_negativ = matrix_l * -1;
-      matrix_ref << matrix_r, matrix_l_negativ;
-      
-      ROS_INFO_STREAM("2.5 matrix_l_negativ is:");
-      ROS_INFO_STREAM(matrix_l_negativ);
-      ROS_INFO_STREAM("3 matrix_ref is:");
-      ROS_INFO_STREAM(matrix_ref);
+      // invert jacobian_l
+      Eigen::MatrixXd matrix_l_transposed;
+      matrix_l_transposed = matrix_l.transpose();
+      Eigen::MatrixXd matrix_inv_l;
+      matrix_inv_l = matrix_l * matrix_l_transposed;
+      matrix_inv_l = matrix_inv_l.inverse();
+      matrix_inv_l = matrix_l_transposed * matrix_inv_l;
 
-      // invert reference jacobian
-      Eigen::MatrixXd matrix_ref_transposed;
-      matrix_ref_transposed = matrix_ref.transpose();
-      Eigen::MatrixXd matrix_inv_ref;
-      matrix_inv_ref = matrix_ref * matrix_ref_transposed;
-      matrix_inv_ref = matrix_inv_ref.inverse();
-      matrix_inv_ref = matrix_ref_transposed * matrix_inv_ref;
-
+      ROS_INFO_STREAM("2.2 matrix_l_transposed is:");
+      ROS_INFO_STREAM(matrix_l_transposed);
+      ROS_INFO_STREAM("2.3 matrix_inv_l is:");
+      ROS_INFO_STREAM(matrix_inv_l);
 
       //q_dot_r = jacobian_inv_r * twist_r_vel
       // 8x6 * 6x1 => 8x1
@@ -281,25 +253,25 @@ int main (int argc, char ** argv)
       
       // Calculate q_dot_ref = J+ * p_dot_ref
       // 16x6 * 6x1 => 16x1
-      Eigen::VectorXd ref_x(6);
-      ref_x[0] = twist_ref.vel.data[0];
-      ref_x[1] = twist_ref.vel.data[1];
-      ref_x[2] = twist_ref.vel.data[2];
-      ref_x[3] = twist_ref.rot.data[0];
-      ref_x[4] = twist_ref.rot.data[1];
-      ref_x[5] = twist_ref.rot.data[2];
+      Eigen::VectorXd l_x(6);
+      l_x[0] = twist_l.vel.data[0];
+      l_x[1] = twist_l.vel.data[1];
+      l_x[2] = twist_l.vel.data[2];
+      l_x[3] = twist_l.rot.data[0];
+      l_x[4] = twist_l.rot.data[1];
+      l_x[5] = twist_l.rot.data[2];
       //ref_x[3] = 0;
       //ref_x[4] = 0;
       //ref_x[5] = 0;
-      q_dot_ref.data = matrix_inv_ref * ref_x; // q_dot_ref blir 16 rader lång? 
-      q_dot_ref.data = q_dot_ref.data.tail(8); // vi tar de sista 8 raderna från q_dot_ref
+      q_dot_l.data = matrix_inv_l * l_x; // q_dot_ref blir 16 rader lång? 
+      q_dot_l.data = q_dot_l.data.tail(8); // vi tar de sista 8 raderna från q_dot_ref
 
-      ROS_INFO_STREAM("3.1 matrix_inv_ref is:");
-      ROS_INFO_STREAM(matrix_inv_ref);
-      ROS_INFO_STREAM("3.1 ref_x is:");
-      ROS_INFO_STREAM(ref_x);
-      ROS_INFO_STREAM("3.2 q_dot_ref is:");
-      ROS_INFO_STREAM(q_dot_ref.data);
+      ROS_INFO_STREAM("3.1 matrix_inv_l is:");
+      ROS_INFO_STREAM(matrix_inv_l);
+      ROS_INFO_STREAM("3.1 l_x is:");
+      ROS_INFO_STREAM(l_x);
+      ROS_INFO_STREAM("3.2 q_dot_l is:");
+      ROS_INFO_STREAM(q_dot_l.data);
       ROS_INFO_STREAM("4");
 
       // manager.getVelIK(chain_end_effector_name_r, state, twist_r, q_dot_r);  //TWIST
@@ -308,7 +280,7 @@ int main (int argc, char ** argv)
       command_r = state;
       command_l = state;
       manager.getJointState(chain_end_effector_name_r, q_dot_r.data, command_r);
-      manager.getJointState(chain_end_effector_name_l, q_dot_ref.data, command_l);
+      manager.getJointState(chain_end_effector_name_l, q_dot_l.data, command_l);
 
       ROS_INFO_STREAM("command_r:");  
       ROS_INFO_STREAM(command_r);
