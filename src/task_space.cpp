@@ -109,22 +109,16 @@ int main (int argc, char ** argv)
       vel_error_r = pose_r.p - desired_position_r1 ;
       vel_error_l = pose_l.p - desired_position_r1 ;
 
-
       double epsilond_x_r, epsilond_y_r, epsilond_z_r, etad_r; //destination_r
       double epsilond_x_l, epsilond_y_l, epsilond_z_l, etad_l; //destination_l
       double epsilone_x_r, epsilone_y_r, epsilone_z_r, etae_r; //current_r
       double epsilone_x_l, epsilone_y_l, epsilone_z_l, etae_l; //current_l
 
       desired_rot_r1.GetQuaternion(etad_r, epsilond_x_r, epsilond_y_r, epsilond_z_r); 
-      desired_rot_l1.GetQuaternion(etad_l, epsilond_x_l, epsilond_y_l, epsilond_z_l); 
       pose_r.M.GetQuaternion(etae_r, epsilone_x_r, epsilone_y_r, epsilone_z_r);
       pose_l.M.GetQuaternion(etae_l, epsilone_x_l, epsilone_y_l, epsilone_z_l);
 
-      // rot_error_r[0] = etae_r * epsilond_x_r - etad_r * epsilone_x_r - epsilond_x_r * epsilone_x_r;
-      //rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - epsilond_y_r * epsilone_y_r;
-      // rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - epsilond_z_r * epsilone_z_r;
-
-      //nytt försök där sista termen är kryssprodukt
+      // MASTER ORIENTATION
       rot_error_r[0] = etae_r * epsilond_x_r - etad_r * epsilone_x_r - (epsilond_y_r * epsilone_z_r - epsilond_z_r * epsilone_y_r);
       rot_error_r[1] = etae_r * epsilond_y_r - etad_r * epsilone_y_r - -1 * (epsilond_x_r * epsilone_z_r - epsilond_z_r * epsilone_x_r);
       rot_error_r[2] = etae_r * epsilond_z_r - etad_r * epsilone_z_r - (epsilond_x_r * epsilone_y_r - epsilond_y_r * epsilone_x_r);
@@ -133,11 +127,6 @@ int main (int argc, char ** argv)
       rot_error_ref[0] = etae_l * epsilone_x_r - etae_r * epsilone_x_l - (epsilone_y_r * epsilone_z_l - epsilone_z_r * epsilone_y_l);
       rot_error_ref[1] = etae_l * epsilone_y_r - etae_r * epsilone_y_l - -1 * (epsilone_x_r * epsilone_z_l - epsilone_z_r * epsilone_x_l);
       rot_error_ref[2] = etae_l * epsilone_z_r - etae_r * epsilone_z_l - (epsilone_x_r * epsilone_y_l - epsilone_y_r * epsilone_x_l);
-
-      // slave orientation funkar piss, vi testar vanlig på left arm
-      // rot_error_ref[0] = etae_l * epsilond_x_l - etad_l * epsilone_x_l - (epsilond_y_l * epsilone_z_l - epsilond_z_l * epsilone_y_l);
-      // rot_error_ref[1] = etae_l * epsilond_y_l - etad_l * epsilone_y_l - -1 * (epsilond_x_l * epsilone_z_l - epsilond_z_l* epsilone_x_l);
-      // rot_error_ref[2] = etae_l * epsilond_z_l - etad_l * epsilone_z_l - (epsilond_x_l * epsilone_y_l - epsilond_y_l * epsilone_x_l);
 
       ROS_INFO_STREAM("\nrot_error_r:");
       ROS_INFO_STREAM(rot_error_r[0]);
@@ -152,10 +141,6 @@ int main (int argc, char ** argv)
       twist_l.vel = - Kp*vel_error_l; // Not used anymore
 
       twist_r.rot = - Ko*rot_error_r; 
-
-      
-      // twist_l.rot = - Ko*rot_error_l;
-
 
 
       // Pref = Pr - Pl
@@ -180,10 +165,7 @@ int main (int argc, char ** argv)
       twist_ref.vel.data[0] = - Kp * (pose_ref.p.data[0]);
       twist_ref.vel.data[1] = - Kp * (pose_ref.p.data[1] + 0.2); // +0.2 offset
       twist_ref.vel.data[2] = - Kp * (pose_ref.p.data[2]);    
-      twist_ref.rot = - Ko*rot_error_ref; 
-      //twist_ref.rot.data[0] = - Ko * (rot_error_ref[0]);
-      //twist_ref.rot.data[1] = - Ko * (rot_error_ref[1]);
-      //twist_ref.rot.data[2] = - Ko * (rot_error_ref[2]);   
+      twist_ref.rot = Ko*rot_error_ref; //OBS! KO ska inte vara negativ på slavarmen!
 
       ROS_INFO_STREAM("\n1.4 twist_r:");
       ROS_INFO_STREAM(twist_r.vel.data[0]);

@@ -11,10 +11,12 @@ from geometry_msgs.msg import *
 from robot_kinematic_services.srv import InverseKinematics
 from sensor_msgs.msg import JointState
 
-Kp = 3.5
-Ki = 0.02
+Kp = 7.5
+Ki = 0.2
 I_r = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
 I_l = [0, 0, 0, 0, 0, 0, 0]  # integral part of controller
+errors_r = [0, 0, 0, 0, 0, 0, 0]
+errors_l = [0, 0, 0, 0, 0, 0, 0]
 x = 0
 l = 7  # lower value of left posestamp. Also the highest of the right.
 u = 13  # Upper value of left posestamp plus 1 because of in range funktion.
@@ -23,6 +25,7 @@ close = 2
 open = -20
 gripper_l_cmd_msg = close
 gripper_r_cmd_msg = close
+
 
 
 class Subscriber(object):
@@ -37,7 +40,6 @@ class Subscriber(object):
 def run(goal_angles_r, goal_angles_l):
     # Set loop frequency
     rate = rospy.Rate(10)
-
     # Initialize publishers
     # Note: The order in which these are appended to the list matters! (1, 2, 7, 3, 4, 5, 6)
     publishers = list()
@@ -326,11 +328,10 @@ def get_velocities_r(goal_angles, current_angles):  # PI-controller
 
     global I_r
     global errors_r
-    errors_r = []
     current_velocities = []
 
     for i in range(7):
-        errors_r.append(goal_angles[i] - current_angles[i])
+        errors_r[i] = (goal_angles[i] - current_angles[i])
         current_velocities.append(Kp * errors_r[i] + I_r[i])
 
         # Update integral part
@@ -339,8 +340,13 @@ def get_velocities_r(goal_angles, current_angles):  # PI-controller
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
-    print("current errors for right arm are ")
-    print(errors_r)
+    # print("current errors for right arm are ")
+    # print(errors_r)
+    rospy.loginfo("^^errors_r^^")
+    rospy.loginfo(errors_r)
+    rospy.loginfo("I_r")
+    rospy.loginfo(I_r)
+    rospy.loginfo("--------")
     return current_velocities
 
 
@@ -348,11 +354,10 @@ def get_velocities_l(goal_angles, current_angles):  # PI-controller
 
     global I_l
     global errors_l
-    errors_l = []
     current_velocities = []
 
     for i in range(7):
-        errors_l.append(goal_angles[i] - current_angles[i])
+        errors_l[i] = (goal_angles[i] - current_angles[i])
         current_velocities.append(Kp * errors_l[i] + I_l[i])
 
         # Update integral part
@@ -361,6 +366,11 @@ def get_velocities_l(goal_angles, current_angles):  # PI-controller
         # Clamp velocities to max of +/-3 Rad/s
         current_velocities[i] = max(min(current_velocities[i], 3), -3)
 
+    rospy.loginfo("^^errors_l^^")
+    rospy.loginfo(errors_l)
+    rospy.loginfo("I_l")
+    rospy.loginfo(I_l)
+    rospy.loginfo("--------")
     print("current errors for left arm are ")
     print(errors_l)
     return current_velocities
